@@ -32,16 +32,6 @@ app = typer.Typer(
 )
 
 
-def _resolve_port(port: int | None) -> int:
-    """Return *port* if given, otherwise read default from config."""
-    if port is not None:
-        return port
-    try:
-        return load_config().collector.port
-    except Exception:
-        return 7821
-
-
 def _collector_base_url(port: int | None) -> str:
     """Build the collector base URL from port (or config default)."""
     try:
@@ -488,7 +478,7 @@ def install(
     ),
 ) -> None:
     """Install hooks and statusline into Claude Code settings."""
-    if claude_settings is None:
+    if claude_settings is None:  # pyright: ignore[reportUnnecessaryComparison]
         claude_settings = _default_claude_settings()
     try:
         _run_install(claude_settings, hooks_dir, use_http)
@@ -927,7 +917,7 @@ def clear(
 
 @app.command()
 def prune(
-    days: int = typer.Option(None, help="Override retention_days from config"),
+    days: int | None = typer.Option(None, help="Override retention_days from config"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be deleted"),
 ) -> None:
     """Prune data older than the configured retention period.

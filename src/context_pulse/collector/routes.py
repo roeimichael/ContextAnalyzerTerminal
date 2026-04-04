@@ -71,15 +71,14 @@ def _resolve_session_title(transcript_path: str, session_id: str) -> str | None:
         if not os.path.isfile(index_path):
             return None
         with open(index_path, encoding="utf-8") as f:
-            entries = json.load(f)
-        if not isinstance(entries, list):
-            return None
+            raw: list[Any] = json.load(f)
+        entries: list[dict[str, str]] = [e for e in raw if isinstance(e, dict)]
         for entry in entries:
             if entry.get("sessionId") == session_id:
                 title = entry.get("customTitle") or entry.get("summary") or None
                 if title:
                     return title
-                first_prompt = entry.get("firstPrompt") or ""
+                first_prompt = entry.get("firstPrompt", "")
                 if first_prompt:
                     return first_prompt[:60].strip()
                 return None

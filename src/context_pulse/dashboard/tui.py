@@ -289,7 +289,7 @@ def build_tasks_panel(status_data: dict[str, Any] | None) -> Panel:
         cost = _get_cost(task)
 
         # Resolve project name; show folder part only to keep column compact
-        full_name = session_names.get(session_id, session_id[:_SESSION_ID_TRUNCATE])
+        full_name = session_names.get(session_id, session_id[:_SESSION_ID_TRUNCATE]) or ""
         # Extract just the folder portion (before the " — " title separator)
         project_label = full_name.split(" \u2014 ")[0] if " \u2014 " in full_name else full_name
         project_label = _truncate(project_label, 20)
