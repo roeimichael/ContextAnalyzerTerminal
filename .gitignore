@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Testing / Linting caches
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Runtime data
+*.db
+*.db-wal
+*.db-shm
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Claude Code local settings (user-specific)
+.claude/settings.local.json
