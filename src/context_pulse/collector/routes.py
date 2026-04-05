@@ -239,6 +239,59 @@ async def receive_statusline_snapshot(
     return {"status": "accepted"}
 
 
+@hook_router.post("/statusline-raw", status_code=202)
+async def receive_raw_statusline(
+    request: Request,
+    db: aiosqlite.Connection = Depends(get_db),
+    sessions: dict[str, Any] = Depends(get_sessions),
+    config: Any = Depends(get_config),
+) -> dict[str, str]:
+    """Accept raw Claude Code statusline JSON and transform it.
+
+    This allows custom statusline scripts to forward their stdin
+    directly without reformatting.  The raw nested JSON is mapped
+    to a ``StatuslineSnapshotRequest`` and delegated to the normal
+    snapshot handler.
+    """
+    try:
+        data: dict[str, Any] = await request.json()
+        cw = data.get("context_window", {})
+        cu = cw.get("current_usage", {})
+        cost_data = data.get("cost", {})
+        model = data.get("model", {})
+        rl = data.get("rate_limits", {})
+
+        snapshot = StatuslineSnapshotRequest(
+            session_id=data.get("session_id", "unknown"),
+            timestamp_ms=int(time.time() * 1000),
+            total_input_tokens=cw.get("total_input_tokens", 0),
+            total_output_tokens=cw.get("total_output_tokens", 0),
+            cache_creation_input_tokens=cu.get("cache_creation_input_tokens", 0),
+            cache_read_input_tokens=cu.get("cache_read_input_tokens", 0),
+            context_window_size=cw.get("context_window_size", 0),
+            used_percentage=cw.get("used_percentage", 0),
+            remaining_percentage=cw.get("remaining_percentage", 0),
+            total_cost_usd=cost_data.get("total_cost_usd", 0.0),
+            total_duration_ms=cost_data.get("total_duration_ms", 0),
+            model_id=model.get("id", "unknown"),
+            model_display_name=model.get("display_name", "Unknown"),
+            rate_limit_five_hour_pct=rl.get("five_hour", {}).get(
+                "used_percentage", 0.0,
+            ),
+            rate_limit_seven_day_pct=rl.get("seven_day", {}).get(
+                "used_percentage", 0.0,
+            ),
+            version=data.get("version", "unknown"),
+        )
+
+        return await receive_statusline_snapshot(
+            snapshot, request, db, sessions, config,
+        )
+    except Exception:
+        logger.debug("Failed to parse raw statusline JSON", exc_info=True)
+        return {"status": "accepted"}
+
+
 # ---------------------------------------------------------------------------
 # API routes
 # ---------------------------------------------------------------------------
