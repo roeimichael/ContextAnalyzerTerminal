@@ -236,6 +236,7 @@ class StatusResponse(BaseModel):
     active_sessions: list[SessionSummary]
     recent_events: list[EventResponse]
     recent_tasks: list[TaskResponse]
+    session_names: dict[str, str] = Field(default_factory=dict)
 
 
 class HealthResponse(BaseModel):

@@ -263,13 +263,17 @@ def build_tasks_panel(status_data: dict[str, Any] | None) -> Panel:
     if status_data is not None:
         tasks = status_data.get("recent_tasks", [])
 
-    # Build session_id -> project_name lookup from active sessions
+    # Build session_id -> project_name lookup from server-provided names
+    # (covers both active and recently-inactive sessions)
     session_names: dict[str, str] = {}
     if status_data is not None:
-        for sess in status_data.get("active_sessions", []):
-            sid = sess.get("session_id", "")
-            name = sess.get("project_name") or sid[:_SESSION_ID_TRUNCATE]
-            session_names[sid] = name
+        session_names = status_data.get("session_names", {})
+        # Fall back to active_sessions if server didn't provide names
+        if not session_names:
+            for sess in status_data.get("active_sessions", []):
+                sid = sess.get("session_id", "")
+                name = sess.get("project_name") or sid[:_SESSION_ID_TRUNCATE]
+                session_names[sid] = name
 
     # Show tasks that have estimated_tokens (direct count) or token_delta
     tasks_with_cost = [

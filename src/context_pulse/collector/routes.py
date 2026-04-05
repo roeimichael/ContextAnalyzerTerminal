@@ -416,10 +416,34 @@ async def get_status(
         for r in recent_task_rows
     ]
 
+    # Build session_names lookup for all sessions referenced in recent tasks.
+    # Active sessions already have names; resolve names for inactive ones too.
+    all_session_names: dict[str, str] = {}
+    for s in session_summaries:
+        if s.project_name:
+            all_session_names[s.session_id] = s.project_name
+
+    # Resolve names for sessions in recent_tasks that aren't active
+    task_sids = {t.session_id for t in recent_tasks} - set(all_session_names)
+    for tsid in task_sids:
+        # Try to get folder name from latest event cwd
+        cwd_cur = await db.execute(
+            "SELECT cwd FROM events WHERE session_id = ? AND cwd IS NOT NULL "
+            "ORDER BY timestamp_ms DESC LIMIT 1",
+            (tsid,),
+        )
+        cwd_r = await cwd_cur.fetchone()
+        if cwd_r and cwd_r[0]:
+            cwd_path = str(cwd_r[0]).replace("\\", "/")
+            parts = [p for p in cwd_path.split("/") if p]
+            if parts:
+                all_session_names[tsid] = parts[-1]
+
     return StatusResponse(
         active_sessions=session_summaries,
         recent_events=recent_events,
         recent_tasks=recent_tasks,
+        session_names=all_session_names,
     )
 
 
