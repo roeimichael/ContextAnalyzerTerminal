@@ -56,6 +56,8 @@ _HOOK_SCRIPTS = [
     "user_prompt_submit.py",
     "session_start.py",
     "statusline.py",
+    "pre_compact.py",
+    "post_compact.py",
 ]
 
 _HOOK_EVENT_MAP: dict[str, str] = {
@@ -64,6 +66,8 @@ _HOOK_EVENT_MAP: dict[str, str] = {
     "stop.py": "Stop",
     "user_prompt_submit.py": "UserPromptSubmit",
     "session_start.py": "SessionStart",
+    "pre_compact.py": "PreCompact",
+    "post_compact.py": "PostCompact",
 }
 
 _CONTEXT_PULSE_MARKER = "context-pulse"

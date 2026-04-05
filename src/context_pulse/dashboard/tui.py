@@ -194,6 +194,8 @@ def build_sessions_panel(status_data: dict[str, Any] | None) -> Panel:
     table.add_column("Events", justify="right", no_wrap=True, min_width=6)
     table.add_column("Tokens", justify="right", no_wrap=True, min_width=10)
     table.add_column("Ctx%", justify="right", no_wrap=True, min_width=5)
+    table.add_column("Cache", justify="right", no_wrap=True, min_width=6)
+    table.add_column("Fills in", justify="right", no_wrap=True, min_width=8)
     table.add_column("Model", no_wrap=True)
 
     sessions: list[dict[str, Any]] = []
@@ -225,11 +227,30 @@ def build_sessions_panel(status_data: dict[str, Any] | None) -> Panel:
         else:
             pct_text = Text("--", style="dim")
 
+        # Cache efficiency
+        cache_eff = sess.get("cache_efficiency_pct")
+        if cache_eff is not None:
+            c_style = "green" if cache_eff >= 80 else "yellow" if cache_eff >= 50 else "red"
+            cache_text = Text(f"{cache_eff:.0f}%", style=c_style)
+        else:
+            cache_text = Text("--", style="dim")
+
+        # Burn rate projection
+        burn = sess.get("burn_rate")
+        if burn and burn.get("turns_remaining") is not None:
+            turns = burn["turns_remaining"]
+            f_style = "bold red" if turns <= 5 else "yellow" if turns <= 15 else "green"
+            fill_text = Text(f"~{turns} turns", style=f_style)
+        else:
+            fill_text = Text("--", style="dim")
+
         table.add_row(
             project,
             str(event_count),
             tokens_str,
             pct_text,
+            cache_text,
+            fill_text,
             model_id,
         )
 

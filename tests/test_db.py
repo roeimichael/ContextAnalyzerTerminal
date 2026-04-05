@@ -39,7 +39,7 @@ async def test_schema_migration(db_connection: aiosqlite.Connection) -> None:
 async def test_schema_version_is_current(db_connection: aiosqlite.Connection) -> None:
     """After migrations the schema version should match the latest migration."""
     version = await get_schema_version(db_connection)
-    assert version == 5
+    assert version == 6
 
 
 async def test_wal_mode_enabled() -> None:

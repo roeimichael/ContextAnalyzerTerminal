@@ -45,6 +45,8 @@ class SessionState:
     last_activity_ms: int = 0
     session_title: str | None = None
     transcript_path: str | None = None
+    last_cache_creation: int = 0
+    last_cache_read: int = 0
 
 
 def _now_ms() -> int:
@@ -162,6 +164,8 @@ async def on_snapshot(
         session.last_snapshot_timestamp_ms = snapshot.timestamp_ms
         session.has_initial_snapshot = True
         session.last_activity_ms = _now_ms()
+        session.last_cache_creation = snapshot.cache_creation_input_tokens
+        session.last_cache_read = snapshot.cache_read_input_tokens
 
         if session.pending_tool_calls:
             logger.info(
@@ -233,6 +237,42 @@ async def on_snapshot(
             )
 
         session.pending_tool_calls.clear()
+
+    # ---- Cache miss detection ----
+    prev_cache_read = session.last_cache_read
+    curr_cache_read = snapshot.cache_read_input_tokens
+    curr_cache_creation = snapshot.cache_creation_input_tokens
+
+    cache_miss_detected = (
+        session.has_initial_snapshot
+        and prev_cache_read > 0
+        and curr_cache_read == 0
+        and curr_cache_creation > session.last_cache_creation
+    )
+
+    # Update session cache state
+    session.last_cache_creation = curr_cache_creation
+    session.last_cache_read = curr_cache_read
+
+    if cache_miss_detected:
+        try:
+            from context_pulse.db import messages as db_messages
+
+            dedup_key = "CACHE_MISS_WARNING"
+            already_sent = await db_messages.has_message_like(
+                db, snapshot.session_id, dedup_key
+            )
+            if not already_sent:
+                msg = (
+                    f"<!-- {dedup_key} -->\n"
+                    f"[context-pulse] Cache expired -- context was rebuilt "
+                    f"(~{curr_cache_creation:,} cache_creation tokens). "
+                    "This is normal after ~5 minutes of inactivity. "
+                    "Frequent cache rebuilds increase token costs."
+                )
+                await db_messages.queue_message(db, snapshot.session_id, msg)
+        except Exception:
+            logger.debug("Cache miss warning failed", exc_info=True)
 
     # ---- Update session state ----
     session.last_snapshot_id = snapshot_id
@@ -386,6 +426,8 @@ async def restore_sessions_from_db(
             has_initial_snapshot=True,
             last_activity_ms=snap_ts,
             transcript_path=transcript_path,
+            last_cache_creation=int(latest_snap.get("cache_creation_input_tokens", 0)),
+            last_cache_read=int(latest_snap.get("cache_read_input_tokens", 0)),
         )
         sessions[sid] = session
         restored += 1

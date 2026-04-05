@@ -51,3 +51,9 @@ def get_chars_per_token() -> int:
     """Return the characters-per-token estimate for hook-side token counting."""
     data = _load_config()
     return int(data.get("hooks", {}).get("chars_per_token_estimate", 4))
+
+
+def get_large_output_threshold() -> int:
+    """Return the token threshold for large tool output warnings."""
+    data = _load_config()
+    return int(data.get("hooks", {}).get("large_output_threshold", 5000))

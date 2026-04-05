@@ -20,6 +20,9 @@ from _hook_config import get_collector_url, get_timeout
 COLLECTOR_URL = get_collector_url("/hook/statusline")
 TIMEOUT_SECONDS = get_timeout()
 
+# Must match context_pulse.engine.context_breakdown.FRESH_SESSION_COST
+_FRESH_SESSION_COST = 13_700
+
 
 def post_snapshot(data: dict) -> None:
     """POST snapshot data to collector. Swallow all errors."""
@@ -94,6 +97,12 @@ def format_statusline(data: dict) -> str:
     five_hour_pct = rl.get("five_hour", {}).get("used_percentage", 0.0)
     seven_day_pct = rl.get("seven_day", {}).get("used_percentage", 0.0)
 
+    total_input = cw.get("total_input_tokens", 0)
+    overhead_ratio = total_input / _FRESH_SESSION_COST if _FRESH_SESSION_COST > 0 else 1.0
+    overhead_str = ""
+    if overhead_ratio > 2.0:
+        overhead_str = f" | cost: {overhead_ratio:.1f}x fresh"
+
     # Build progress bar (10 chars)
     filled = round(used_pct / 10)
     bar = "\u2588" * filled + "\u2591" * (10 - filled)
@@ -103,16 +112,19 @@ def format_statusline(data: dict) -> str:
     badge = get_anomaly_badge(session_id) if session_id else ""
 
     if badge:
+        badge_overhead = f" | {overhead_ratio:.1f}x" if overhead_ratio > 2.0 else ""
         return (
             f"{model_name} | ctx {used_pct}% {bar} "
             f"| {badge} "
             f"| ${total_cost:.2f}"
+            f"{badge_overhead}"
         )
     return (
         f"{model_name} | ctx {used_pct}% {bar} "
         f"| ${total_cost:.2f} "
         f"| 5h: {five_hour_pct:.0f}% "
         f"| 7d: {seven_day_pct:.0f}%"
+        f"{overhead_str}"
     )
 
 

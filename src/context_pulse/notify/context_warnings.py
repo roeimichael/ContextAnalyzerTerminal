@@ -24,26 +24,25 @@ _THRESHOLDS: list[tuple[float, str, str]] = [
         60.0,
         "CONTEXT_WARNING_60",
         "[context-pulse] Context usage at {pct:.0f}%. "
-        "Your conversation history is consuming significant context — "
-        "each message now costs ~{cost_per_turn}K tokens "
+        "Each message now costs ~{cost_per_turn}K tokens "
         "(vs ~{fresh_k}K for a fresh session). "
-        "Consider starting a fresh session to reduce per-turn cost. "
-        "Current burn rate suggests ~{est_remaining} of useful context remaining.",
+        "Run /compact to reclaim space, or start a fresh session. "
+        "Remaining useful context: {est_remaining}.",
     ),
     (
         70.0,
         "CONTEXT_WARNING_70",
-        "[context-pulse] Context at {pct:.0f}% — compaction may begin soon. "
-        "Earlier conversation details will start being lost. "
-        "Strongly recommend: save important context to memory, then start a fresh session. "
+        "[context-pulse] Context at {pct:.0f}% \u2014 auto-compact approaching (~83%). "
+        "Run /compact now to compact proactively (you control what's preserved). "
+        "Save important context to memory first. "
         "A fresh session costs ~{fresh_k}K/turn vs your current ~{cost_per_turn}K/turn.",
     ),
     (
         90.0,
         "CONTEXT_WARNING_90",
         "[context-pulse] CRITICAL: Context at {pct:.0f}%. "
-        "Response quality is degrading. Please save any important findings "
-        "to memory immediately, then start a new session. "
+        "Run /clear to start fresh within this session, "
+        "or save findings to memory and open a new session. "
         "Current cost: ~{cost_per_turn}K/turn. Fresh session: ~{fresh_k}K/turn.",
     ),
 ]

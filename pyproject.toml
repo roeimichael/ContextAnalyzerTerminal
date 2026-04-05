@@ -1,6 +1,6 @@
 [project]
 name = "context-pulse"
-version = "0.1.0"
+version = "0.2.0"
 description = "Per-tool-call context window analyzer for Claude Code"
 readme = "README.md"
 requires-python = ">=3.11"

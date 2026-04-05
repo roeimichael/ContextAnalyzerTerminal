@@ -228,6 +228,8 @@ class SessionSummary(BaseModel):
     total_tokens_used: int | None
     used_percentage: int | None
     model_id: str | None
+    cache_efficiency_pct: float | None = None
+    burn_rate: dict[str, Any] | None = None
 
 
 class StatusResponse(BaseModel):

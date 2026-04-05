@@ -111,6 +111,7 @@ MIGRATIONS: list[tuple[int, str]] = [
     (3, "pending messages queue for hook additionalContext injection"),
     (4, "estimated token counts on tasks"),
     (5, "composite index for anomaly cooldown lookups"),
+    (6, "compaction events tracking table"),
 ]
 
 # Internal mapping from version number to the coroutine that applies it.
@@ -278,4 +279,28 @@ async def _apply_v5(db: aiosqlite.Connection) -> None:  # pyright: ignore[report
     await db.execute(
         "CREATE INDEX IF NOT EXISTS idx_anomalies_cooldown "
         "ON anomalies(session_id, task_type, timestamp_ms)"
+    )
+
+
+@_register(6)
+async def _apply_v6(db: aiosqlite.Connection) -> None:  # pyright: ignore[reportUnusedFunction]
+    """Add compaction_events table for tracking compact operations."""
+    await db.execute(
+        """\
+        CREATE TABLE IF NOT EXISTS compaction_events (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id          TEXT NOT NULL,
+            trigger             TEXT NOT NULL,
+            pre_snapshot_id     INTEGER REFERENCES token_snapshots(id),
+            post_snapshot_id    INTEGER REFERENCES token_snapshots(id),
+            tokens_before       INTEGER,
+            tokens_after        INTEGER,
+            tokens_saved        INTEGER,
+            compact_summary     TEXT,
+            timestamp_ms        INTEGER NOT NULL
+        )"""
+    )
+    await db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_compaction_session "
+        "ON compaction_events(session_id, timestamp_ms)"
     )

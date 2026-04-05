@@ -346,6 +346,30 @@ async def get_status(
         if tok_row and tok_row[0]:
             total_tokens_used = int(tok_row[0])
 
+        # Cache efficiency: cache_read / (cache_read + cache_creation)
+        cache_efficiency_pct: float | None = None
+        if latest_snap is not None:
+            cache_read = latest_snap.get("cache_read_input_tokens", 0)
+            cache_creation = latest_snap.get("cache_creation_input_tokens", 0)
+            cache_total = cache_read + cache_creation
+            if cache_total > 0:
+                cache_efficiency_pct = round(cache_read / cache_total * 100, 1)
+
+        # Burn rate projection
+        burn_rate: dict[str, Any] | None = None
+        try:
+            from context_pulse.engine.burn_rate import compute_burn_rate
+
+            snap_rows = await db_events.get_recent_snapshots(
+                db, session_id=sid, limit=20,
+            )
+            if snap_rows:
+                snap_asc = list(reversed(snap_rows))
+                cw_size = snap_asc[-1].get("context_window_size", 200_000)
+                burn_rate = compute_burn_rate(snap_asc, cw_size)
+        except Exception:
+            logger.debug("Burn rate failed for session=%s", sid, exc_info=True)
+
         session_summaries.append(
             SessionSummary(
                 session_id=sid,
@@ -356,6 +380,8 @@ async def get_status(
                 total_tokens_used=total_tokens_used,
                 used_percentage=used_percentage,
                 model_id=model_id,
+                cache_efficiency_pct=cache_efficiency_pct,
+                burn_rate=burn_rate,
             )
         )
 
@@ -665,3 +691,41 @@ async def get_context_breakdown(
         context_window_size=snap.get("context_window_size", 0),
         used_percentage=snap.get("used_percentage", 0),
     )
+
+
+@api_router.get("/sessions/{session_id}/burn-rate")
+async def get_burn_rate(
+    session_id: str,
+    lookback: int = 20,
+    db: aiosqlite.Connection = Depends(get_db),
+) -> dict[str, Any]:
+    """Return burn rate projection for a session."""
+    from context_pulse.engine.burn_rate import compute_burn_rate
+
+    snap_rows = await db_events.get_recent_snapshots(
+        db, session_id=session_id, limit=lookback,
+    )
+    if not snap_rows:
+        return {"error": "No snapshot data for this session"}
+
+    snap_rows_asc = list(reversed(snap_rows))
+    context_window_size = snap_rows_asc[-1].get("context_window_size", 200_000)
+    result = compute_burn_rate(snap_rows_asc, context_window_size)
+    if result is None:
+        return {"error": "Insufficient data or non-positive growth rate"}
+    return result
+
+
+@api_router.get("/compactions")
+async def get_compactions(
+    limit: int = 20,
+    session_id: str | None = None,
+    db: aiosqlite.Connection = Depends(get_db),
+) -> dict[str, Any]:
+    """Return recent compaction events."""
+    from context_pulse.db import compaction as db_compaction
+
+    rows = await db_compaction.get_recent_compactions(
+        db, session_id=session_id, limit=limit,
+    )
+    return {"compactions": rows}

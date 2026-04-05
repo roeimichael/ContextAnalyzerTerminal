@@ -65,6 +65,8 @@ class HooksConfig(BaseModel):
     # Approximate characters per token for hook-side token estimation.
     # This is a rough heuristic (~4 chars/token for English text).
     chars_per_token_estimate: int = 4
+    # Token threshold above which a tool response triggers a large-output warning.
+    large_output_threshold: int = 5000
 
 
 class ServerConfig(BaseModel):
@@ -218,6 +220,8 @@ timeout_seconds = 2.0
 # This is a rough heuristic (~4 chars/token for English text).
 # The actual delta computation uses real statusline data, not this estimate.
 chars_per_token_estimate = 4
+# Token threshold above which a single tool response triggers a large-output warning.
+large_output_threshold = 5000
 
 [server]
 # Session idle cleanup threshold in milliseconds (default: 1 hour)

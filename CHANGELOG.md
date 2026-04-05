@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.0 (2026-04-05)
+
+### Smart Warnings & Cache Awareness
+
+- **Context warnings suggest /compact and /clear** -- actionable advice at 60%, 70%, and 90% context thresholds instead of generic "start fresh"
+- **Large tool output alerting** -- warns when a single tool response exceeds 5K tokens with advice to pipe through head/tail or use rtk
+- **Overhead ratio in statusline** -- shows "cost: 3.2x fresh" when per-message cost exceeds 2x a fresh session
+- **Cache miss detection** -- detects when the 5-minute prompt cache expires and warns about context rebuild cost
+- **Cache efficiency % in dashboard** -- new column showing cache_read / total cache ratio per session
+- **Burn rate projection** -- "fills in ~X turns" column in dashboard using linear regression over recent snapshots
+- **Compaction tracking** -- PreCompact/PostCompact hooks track compaction events with tokens saved
+- **Compaction API endpoint** -- `/api/compactions` for querying compaction history
+- **Burn rate API endpoint** -- `/api/sessions/{id}/burn-rate` for programmatic access
+- **Uninstall command** -- `context-pulse uninstall` cleanly removes hooks from Claude Code
+
+### Improvements
+
+- 113 tests (up from 101)
+- Schema migration v6 for compaction_events table
+- Configurable large output threshold via `[hooks] large_output_threshold`
+
 ## 0.1.0 (2026-04-03)
 
 Initial release.

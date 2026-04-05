@@ -13,11 +13,12 @@ import json
 import time
 import httpx
 
-from _hook_config import get_collector_url, get_timeout, get_chars_per_token
+from _hook_config import get_collector_url, get_timeout, get_chars_per_token, get_large_output_threshold
 
 COLLECTOR_URL = get_collector_url("/hook/event")
 TIMEOUT_SECONDS = get_timeout()
 _CHARS_PER_TOKEN = get_chars_per_token()
+_LARGE_OUTPUT_THRESHOLD = get_large_output_threshold()
 
 
 def estimate_tokens(text: str) -> int:
@@ -117,6 +118,16 @@ def main() -> None:
         # Collect additionalContext from anomaly alerts + pending messages
         session_id = payload.get("session_id", "")
         context_parts = []
+
+        # Check for large tool output
+        response_tokens = envelope.get("estimated_response_tokens", 0)
+        if response_tokens and response_tokens >= _LARGE_OUTPUT_THRESHOLD:
+            tool = envelope.get("tool_name", "Tool")
+            tokens_k = response_tokens / 1000
+            context_parts.append(
+                f"[context-pulse] That {tool} output consumed ~{tokens_k:.0f}K tokens. "
+                "Consider piping through head/tail or using rtk."
+            )
 
         if session_id:
             # Check anomaly alerts
