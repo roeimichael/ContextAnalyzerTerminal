@@ -123,7 +123,6 @@ async def get_recent_events(
     sql = f"SELECT * FROM events{where} ORDER BY timestamp_ms DESC LIMIT ?"
     params.append(limit)
 
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(sql, params)
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
@@ -142,7 +141,6 @@ async def get_latest_snapshot(
         "WHERE session_id = ? "
         "ORDER BY timestamp_ms DESC LIMIT 1"
     )
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(sql, (session_id,))
     row = await cursor.fetchone()
     if row is None:
@@ -161,7 +159,6 @@ async def get_recent_snapshots(
         "WHERE session_id = ? "
         "ORDER BY timestamp_ms DESC LIMIT ?"
     )
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(sql, (session_id, limit))
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
@@ -176,7 +173,6 @@ async def get_active_session_ids(
     Used for session restoration on startup.
     """
     sql = "SELECT DISTINCT session_id FROM events WHERE timestamp_ms > ?"
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(sql, (since_ms,))
     rows = await cursor.fetchall()
     return [str(row["session_id"]) for row in rows]

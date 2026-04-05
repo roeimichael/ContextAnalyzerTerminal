@@ -17,7 +17,6 @@ async def get_baseline(
     Returns a dict with keys: task_type, mean, stddev, sample_count,
     updated_at, m2, window_json.
     """
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT * FROM baselines WHERE task_type = ?",
         (task_type,),
@@ -64,7 +63,6 @@ async def get_all_baselines(
     db: aiosqlite.Connection,
 ) -> list[dict[str, Any]]:
     """Return all baseline rows."""
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT * FROM baselines ORDER BY task_type"
     )

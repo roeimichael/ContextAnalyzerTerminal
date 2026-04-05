@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -152,8 +153,8 @@ async def receive_hook_event(
             transcript_path = event.payload.get("transcript_path")
             if transcript_path:
                 session.transcript_path = transcript_path
-                session.session_title = _resolve_session_title(
-                    transcript_path, event.session_id
+                session.session_title = await asyncio.to_thread(
+                    _resolve_session_title, transcript_path, event.session_id
                 )
 
     except Exception:
@@ -260,7 +261,6 @@ async def get_status(
     session_summaries: list[SessionSummary] = []
     for sid in active_ids:
         # Query event count and first/last timestamps for this session.
-        db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             "SELECT COUNT(*) AS cnt, MIN(timestamp_ms) AS first_ms, MAX(timestamp_ms) AS last_ms "
             "FROM events WHERE session_id = ?",
@@ -299,8 +299,8 @@ async def get_status(
         session_title: str | None = None
         if session is not None:
             if session.session_title is None and session.transcript_path:
-                session.session_title = _resolve_session_title(
-                    session.transcript_path, sid
+                session.session_title = await asyncio.to_thread(
+                    _resolve_session_title, session.transcript_path, sid
                 )
             session_title = session.session_title
 
@@ -428,7 +428,6 @@ async def get_session_events(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> list[EventResponse]:
     """Return events for a specific session, ordered by timestamp desc."""
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT * FROM events WHERE session_id = ? ORDER BY timestamp_ms DESC LIMIT ? OFFSET ?",
         (session_id, limit, offset),
@@ -458,7 +457,6 @@ async def get_session_tasks(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> list[TaskResponse]:
     """Return tasks (with deltas) for a specific session, ordered by timestamp desc."""
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT * FROM tasks WHERE session_id = ? ORDER BY timestamp_ms DESC LIMIT ? OFFSET ?",
         (session_id, limit, offset),
@@ -496,6 +494,9 @@ async def get_session_snapshots(
             timestamp_ms=r["timestamp_ms"],
             total_input_tokens=r["total_input_tokens"],
             total_output_tokens=r["total_output_tokens"],
+            cache_creation_input_tokens=r.get("cache_creation_input_tokens", 0),
+            cache_read_input_tokens=r.get("cache_read_input_tokens", 0),
+            context_window_size=r.get("context_window_size", 0),
             used_percentage=r["used_percentage"],
             model_id=r["model_id"],
         )
@@ -540,11 +541,17 @@ async def get_rtk_status() -> dict[str, Any]:
         is_rtk_hooks_installed,
         is_rtk_installed,
     )
+    installed, version, hooks_installed, savings_24h = await asyncio.gather(
+        asyncio.to_thread(is_rtk_installed),
+        asyncio.to_thread(get_rtk_version),
+        asyncio.to_thread(is_rtk_hooks_installed),
+        asyncio.to_thread(get_rtk_savings_summary, 24),
+    )
     return {
-        "installed": is_rtk_installed(),
-        "version": get_rtk_version(),
-        "hooks_installed": is_rtk_hooks_installed(),
-        "savings_24h": get_rtk_savings_summary(since_hours=24),
+        "installed": installed,
+        "version": version,
+        "hooks_installed": hooks_installed,
+        "savings_24h": savings_24h,
     }
 
 

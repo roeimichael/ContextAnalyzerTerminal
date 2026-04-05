@@ -366,7 +366,6 @@ async def restore_sessions_from_db(
         # Extract transcript_path from the latest event payload
         transcript_path: str | None = None
         try:
-            db.row_factory = aiosqlite.Row
             tp_cursor = await db.execute(
                 "SELECT payload_json FROM events WHERE session_id = ? "
                 "AND payload_json LIKE '%transcript_path%' LIMIT 1",
@@ -377,7 +376,7 @@ async def restore_sessions_from_db(
                 tp_payload = json.loads(tp_row["payload_json"])
                 transcript_path = tp_payload.get("transcript_path")
         except Exception:
-            pass
+            logger.debug("Failed to extract transcript_path for session %s", sid, exc_info=True)
 
         session = SessionState(
             session_id=sid,
@@ -438,6 +437,13 @@ async def process_anomalies(
         return []
 
     anomalies: list[AnomalyResult] = []
+    if len(results) != len(pending_list):
+        logger.debug(
+            "results/pending_list length mismatch (%d vs %d); "
+            "expected on first snapshot",
+            len(results),
+            len(pending_list),
+        )
     for (task_id, _delta, is_compaction), ptc in zip(results, pending_list, strict=False):
         if is_compaction:
             continue

@@ -36,7 +36,7 @@ src/context_pulse/
   dashboard/           # Rich TUI dashboard
   notify/              # Multi-channel notifications
 hooks/                 # Claude Code hook scripts
-tests/                 # Pytest suite (101 tests)
+tests/                 # Pytest suite
 ```
 
 ## Development Workflow

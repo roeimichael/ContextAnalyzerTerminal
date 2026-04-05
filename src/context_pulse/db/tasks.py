@@ -183,7 +183,6 @@ async def get_recent_tasks(
     """
     params.append(limit)
 
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]
@@ -213,7 +212,6 @@ async def get_tasks_by_type(
     list[dict[str, Any]]
         Each row converted to a plain dict.
     """
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         """
         SELECT *
@@ -251,7 +249,6 @@ async def get_null_delta_tasks(
     list[dict[str, Any]]
         Each row converted to a plain dict.
     """
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         """
         SELECT *

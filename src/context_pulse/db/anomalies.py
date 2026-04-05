@@ -116,7 +116,6 @@ async def get_recent_anomalies(
     """
     params.append(limit)
 
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()
     return [dict(row) for row in rows]

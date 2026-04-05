@@ -149,7 +149,7 @@ def _build_hooks_config(
         else:
             hook_entry = {
                 "type": "command",
-                "command": f"uv run {path_str}",
+                "command": f'uv run "{path_str}"',
                 "timeout": 5,
             }
 
@@ -168,7 +168,7 @@ def _build_statusline_config(hooks_dir: Path) -> dict[str, str]:
     path_str = str(statusline_path).replace("\\", "/")
     return {
         "type": "command",
-        "command": f"uv run {path_str}",
+        "command": f'uv run "{path_str}"',
     }
 
 
@@ -222,7 +222,8 @@ def _merge_settings(
     else:
         logger.warning(
             "Existing statusLine found that does not belong to context-pulse. "
-            "Keeping existing statusLine. Use --force-statusline to override."
+            "Keeping existing statusLine. Remove the existing statusLine entry "
+            "manually to use context-pulse statusline."
         )
 
     return settings
@@ -492,12 +493,143 @@ def install(
 app.command(name="init", hidden=True)(install)
 
 
+@app.command()
+def uninstall(
+    claude_settings: Path = typer.Option(
+        None,
+        "--claude-settings",
+        help="Path to Claude Code settings.json "
+             "(default: ~/.claude/settings.json or CLAUDE_SETTINGS_PATH)",
+    ),
+    remove_hooks: bool = typer.Option(
+        False,
+        "--remove-hooks",
+        help="Also delete the hook scripts from ~/.context-pulse/hooks/",
+    ),
+) -> None:
+    """Remove context-pulse hooks and statusline from Claude Code settings."""
+    if claude_settings is None:  # pyright: ignore[reportUnnecessaryComparison]
+        claude_settings = _default_claude_settings()
+    try:
+        _run_uninstall(claude_settings, remove_hooks)
+    except Exception as exc:
+        console.print(f"[red]Uninstall failed:[/red] {exc}")
+        logger.exception("Uninstall failed")
+        raise typer.Exit(1) from None
+
+
+def _run_uninstall(
+    claude_settings: Path,
+    remove_hooks: bool,
+) -> None:
+    """Core uninstall logic, separated for testability."""
+    # 1. Read existing settings.json
+    claude_settings = claude_settings.expanduser()
+    if not claude_settings.exists():
+        console.print(
+            f"[yellow]Settings file not found:[/yellow] {claude_settings}\n"
+            "  Nothing to uninstall."
+        )
+        return
+
+    try:
+        raw: object = json.loads(claude_settings.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            console.print(
+                "[yellow]settings.json is not a JSON object."
+                " Nothing to uninstall.[/yellow]"
+            )
+            return
+        settings = cast(dict[str, Any], raw)
+    except (json.JSONDecodeError, OSError) as exc:
+        console.print(f"[red]Could not parse settings.json:[/red] {exc}")
+        raise typer.Exit(1) from None
+
+    # 2. Filter out context-pulse hook entries
+    current_hooks = cast(dict[str, Any], settings.get("hooks", {}))
+    hooks_removed = 0
+    cleaned_hooks: dict[str, Any] = {}
+    for event_name in current_hooks:
+        entries = current_hooks[event_name]
+        if not isinstance(entries, list):
+            cleaned_hooks[event_name] = entries
+            continue
+        typed_entries = cast(list[dict[str, Any]], entries)
+        cleaned_entries: list[dict[str, Any]] = []
+        for entry in typed_entries:
+            inner_hooks = cast(list[dict[str, Any]], entry.get("hooks", []))
+            non_cp = [h for h in inner_hooks if not _is_context_pulse_hook(h)]
+            removed_count = len(inner_hooks) - len(non_cp)
+            hooks_removed += removed_count
+            if non_cp:
+                cleaned_entries.append({**entry, "hooks": non_cp})
+        if cleaned_entries:
+            cleaned_hooks[event_name] = cleaned_entries
+
+    if cleaned_hooks:
+        settings["hooks"] = cleaned_hooks
+    elif "hooks" in settings:
+        del settings["hooks"]
+
+    # 3. Remove statusLine if it belongs to context-pulse
+    statusline_removed = False
+    existing_sl: dict[str, Any] = settings.get("statusLine", {})
+    sl_cmd: str = existing_sl.get("command", "")
+    if existing_sl and _CONTEXT_PULSE_MARKER in sl_cmd:
+        del settings["statusLine"]
+        statusline_removed = True
+
+    # 4. Write cleaned settings.json back
+    claude_settings.write_text(
+        json.dumps(settings, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    console.print(f"  Updated settings: [bold]{claude_settings}[/bold]")
+    console.print(f"  Removed {hooks_removed} hook(s)")
+    if statusline_removed:
+        console.print("  Removed statusLine entry")
+
+    # 5. Optionally remove the hooks directory
+    hooks_dir = get_config_dir() / "hooks"
+    hooks_deleted = False
+    if remove_hooks and hooks_dir.exists():
+        shutil.rmtree(hooks_dir)
+        hooks_deleted = True
+        console.print(f"  Removed hooks directory: [bold]{hooks_dir}[/bold]")
+    elif remove_hooks:
+        console.print(f"  Hooks directory not found: {hooks_dir} (skipped)")
+
+    # 6. Summary
+    console.print()
+    console.print(
+        Panel(
+            "[green]Uninstall complete![/green]\n\n"
+            f"Hooks removed:       {hooks_removed}\n"
+            f"StatusLine removed:  {'yes' if statusline_removed else 'no'}\n"
+            f"Hook scripts deleted: {'yes' if hooks_deleted else 'no'}\n"
+            f"Settings:            {claude_settings}",
+            title="context-pulse",
+            border_style="green",
+        )
+    )
+
+
 def _run_install(
     claude_settings: Path,
     hooks_dir: Path,
     use_http: bool,
 ) -> None:
     """Core install logic, separated for testability."""
+    # 0. Verify uv is available (required for command-mode hooks)
+    if not use_http and not shutil.which("uv"):
+        console.print(
+            "[red]'uv' not found on PATH.[/red] "
+            "context-pulse hooks require uv to run. "
+            "Install it from [bold]https://docs.astral.sh/uv/[/bold] "
+            "or use [bold]--use-http[/bold] to skip command hooks."
+        )
+        raise typer.Exit(1)
+
     # 1. Create directories
     hooks_dir = hooks_dir.expanduser()
     hooks_dir.mkdir(parents=True, exist_ok=True)

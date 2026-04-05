@@ -49,7 +49,7 @@ def post_snapshot(data: dict) -> None:
             "version": data.get("version", "unknown"),
         }
 
-        with httpx.Client(timeout=TIMEOUT_SECONDS) as client:
+        with httpx.Client(timeout=1.5) as client:
             client.post(COLLECTOR_URL, json=snapshot)
     except Exception:
         pass
@@ -59,7 +59,7 @@ def get_anomaly_badge(session_id: str) -> str:
     """Query collector for a recent anomaly and return a badge string."""
     try:
         url = get_collector_url(f"/api/sessions/{session_id}/latest-anomaly")
-        with httpx.Client(timeout=1.0) as client:
+        with httpx.Client(timeout=0.5) as client:
             resp = client.get(url)
             if resp.status_code == 200 and resp.json():
                 a = resp.json()

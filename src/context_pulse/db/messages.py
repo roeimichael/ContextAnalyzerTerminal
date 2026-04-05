@@ -37,7 +37,6 @@ async def consume_messages(
     Returns the message strings. Marks them as consumed so they
     won't be returned again.
     """
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT id, message FROM pending_messages "
         "WHERE session_id = ? AND consumed = 0 ORDER BY created_at ASC",
@@ -65,9 +64,11 @@ async def has_message_like(
     pattern: str,
 ) -> bool:
     """Check if a message matching pattern exists (consumed or not) for dedup."""
+    escaped = pattern.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     cursor = await db.execute(
-        "SELECT COUNT(*) FROM pending_messages WHERE session_id = ? AND message LIKE ?",
-        (session_id, f"%{pattern}%"),
+        "SELECT COUNT(*) FROM pending_messages "
+        "WHERE session_id = ? AND message LIKE ? ESCAPE '\\'",
+        (session_id, f"%{escaped}%"),
     )
     row = await cursor.fetchone()
     if row is None:

@@ -26,19 +26,23 @@ CAT hooks into your Claude Code sessions and tracks token cost **per tool call**
 git clone https://github.com/roeimichael/ContextAnalyzerTerminal.git
 cd ContextAnalyzerTerminal
 uv sync
+
+# Optional: enable LLM root-cause classifier (uses Haiku, ~$0.0001/event)
+uv sync --extra classifier
 ```
+
+> **Requires:** Python 3.11+ and [uv](https://docs.astral.sh/uv/)
 
 ## Setup & Run
 
 ```bash
-# 1. Initialize config and install hooks into Claude Code
-context-pulse config init
+# Install hooks into Claude Code (also writes default config)
 context-pulse install
 
-# 2. Start the collector (keep running in a terminal)
+# Start the collector (keep running in a terminal)
 context-pulse serve
 
-# 3. Open the dashboard
+# Open the dashboard
 context-pulse dashboard
 ```
 
@@ -52,6 +56,7 @@ That's it. Use Claude Code normally -- CAT tracks everything in the background.
 | **Rolling baselines** | Learns normal cost per task type using Welford's algorithm |
 | **Anomaly detection** | Flags tool calls that exceed baseline by configurable Z-score |
 | **Root-cause analysis** | Haiku classifier explains *why* in plain language |
+| **Context cost breakdown** | See fresh-session vs current overhead ratio |
 | **Live dashboard** | Rich TUI with sessions, cost timeline, and anomaly feed |
 | **Notifications** | Statusline badges, system alerts, Slack/Discord webhooks |
 | **Multi-session** | Tracks concurrent Claude Code sessions independently |
@@ -63,21 +68,22 @@ That's it. Use Claude Code normally -- CAT tracks everything in the background.
 ## CLI Reference
 
 ```
-context-pulse serve           # Start the collector server
-context-pulse dashboard       # Open the TUI dashboard
-context-pulse status          # View active sessions
-context-pulse anomalies       # List recent anomalies
-context-pulse baseline        # Show rolling baseline stats
-context-pulse health          # Collector health check
-context-pulse install         # Install hooks into Claude Code
-context-pulse config init     # Write default config
-context-pulse config show     # Display loaded configuration
-context-pulse prune           # Clean up old data
+context-pulse install         Install hooks into Claude Code
+context-pulse uninstall       Remove hooks from Claude Code
+context-pulse serve           Start the collector server
+context-pulse dashboard       Launch the live TUI dashboard
+context-pulse status          View active sessions and recent tasks
+context-pulse anomalies       List recent anomalies with root causes
+context-pulse context-cost    Show context cost breakdown
+context-pulse health          Collector health check
+context-pulse rtk-status      Show RTK integration status and savings
+context-pulse prune           Clean up old data
+context-pulse clear           Clear all stored data and start fresh
 ```
 
 ## Configuration
 
-Config lives at `~/.context-pulse/config.toml`. Every setting has an environment variable override with the `CONTEXT_PULSE_` prefix.
+Config lives at `~/.context-pulse/config.toml` (created automatically on first `install`). Every setting can be overridden with environment variables using the `CONTEXT_PULSE_` prefix.
 
 ```toml
 [collector]
@@ -85,18 +91,26 @@ host = "127.0.0.1"
 port = 7821
 
 [anomaly]
-z_score_threshold = 2.0     # Std devs above mean to flag
-min_samples = 5             # Data points before detection kicks in
-cooldown_seconds = 60       # Debounce duplicate alerts
+z_score_threshold = 2.0      # Std devs above mean to flag
+min_sample_count = 5          # Data points before detection kicks in
+cooldown_seconds = 60         # Debounce duplicate alerts
 
 [classifier]
-enabled = true              # Requires: uv sync --extra classifier
+enabled = true                # Requires: uv sync --extra classifier
 model = "claude-haiku-4-5-20251001"
 
 [notifications]
-statusline = true           # Badge in Claude Code statusline
-system = false              # OS notifications (macOS/Linux)
-webhook_url = ""            # Slack/Discord webhook
+statusline = true             # Badge in Claude Code statusline
+system_notification = true    # OS notifications (macOS/Linux)
+in_session_alert = true       # In-session alert messages
+webhook_url = ""              # Slack/Discord webhook
+```
+
+Environment variable overrides:
+```bash
+CONTEXT_PULSE_COLLECTOR_PORT=8080
+CONTEXT_PULSE_ANOMALY_Z_SCORE_THRESHOLD=3.0
+CONTEXT_PULSE_CLASSIFIER_ENABLED=false
 ```
 
 ## How It Works
@@ -120,7 +134,7 @@ Hooks + Statusline --> Collector --> Delta Engine --> Anomaly Detection --> Clas
 
 ```bash
 uv sync --all-extras          # Install with dev + classifier deps
-uv run pytest tests/ -v       # 101 tests
+uv run pytest tests/ -v       # Run full test suite
 uv run ruff check src tests   # Lint
 uv run pyright                # Type check (strict mode)
 ```

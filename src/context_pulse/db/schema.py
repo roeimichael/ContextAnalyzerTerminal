@@ -110,6 +110,7 @@ MIGRATIONS: list[tuple[int, str]] = [
     (2, "classifier cache table and baseline persistence columns"),
     (3, "pending messages queue for hook additionalContext injection"),
     (4, "estimated token counts on tasks"),
+    (5, "composite index for anomaly cooldown lookups"),
 ]
 
 # Internal mapping from version number to the coroutine that applies it.
@@ -268,4 +269,13 @@ async def _apply_v4(db: aiosqlite.Connection) -> None:  # pyright: ignore[report
     """Add estimated token count columns to tasks table."""
     await db.execute(
         "ALTER TABLE tasks ADD COLUMN estimated_tokens INTEGER"
+    )
+
+
+@_register(5)
+async def _apply_v5(db: aiosqlite.Connection) -> None:  # pyright: ignore[reportUnusedFunction]
+    """Add composite index for anomaly cooldown lookups."""
+    await db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_anomalies_cooldown "
+        "ON anomalies(session_id, task_type, timestamp_ms)"
     )

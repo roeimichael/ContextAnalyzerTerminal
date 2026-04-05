@@ -57,7 +57,6 @@ def _fallback_classify(
         task_type, f"Review whether this {task_type} call can be scoped down"
     )
     return cause, severity, suggestion
-"""Minimum stddev floor to prevent division by zero on uniform data."""
 
 
 def compute_z_score(value: float, mean: float, stddev: float) -> float:

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from typing import Any
 
 import aiosqlite
 
@@ -21,6 +22,27 @@ from context_pulse.collector.models import ClassifierResponse
 from context_pulse.config import ClassifierConfig
 
 logger = logging.getLogger("context_pulse.engine.classifier")
+
+# ---------------------------------------------------------------------------
+# Cached Anthropic client (avoid re-creation on every call)
+# ---------------------------------------------------------------------------
+
+_client: Any = None  # anthropic.AsyncAnthropic once created
+
+
+def _get_anthropic_client() -> Any:
+    """Return a cached ``anthropic.AsyncAnthropic`` instance.
+
+    The ``anthropic`` package is imported lazily so the module loads even
+    when the package is not installed.
+    """
+    global _client  # noqa: PLW0603
+    if _client is None:
+        import anthropic  # noqa: I001
+
+        _client = anthropic.AsyncAnthropic()
+    return _client
+
 
 # ---------------------------------------------------------------------------
 # System prompt — per project brief section 8
@@ -80,7 +102,6 @@ async def _get_cached_response(
     cache_key: str,
 ) -> ClassifierResponse | None:
     """Look up a cached classifier response.  Returns ``None`` on miss."""
-    db.row_factory = aiosqlite.Row
     cursor = await db.execute(
         "SELECT response_json FROM classifier_cache WHERE cache_key = ?",
         (cache_key,),
@@ -234,9 +255,9 @@ async def classify_anomaly(
         z_score=z_score,
     )
 
-    # ---- Call Anthropic SDK (lazy import) ----
+    # ---- Call Anthropic SDK (lazy import, cached client) ----
     try:
-        import anthropic  # noqa: I001
+        client = _get_anthropic_client()
     except ImportError:
         logger.error(
             "anthropic package not installed. "
@@ -245,7 +266,6 @@ async def classify_anomaly(
         return None
 
     try:
-        client = anthropic.AsyncAnthropic()  # uses ANTHROPIC_API_KEY env var
         message = await client.messages.create(
             model=classifier_config.model,
             max_tokens=classifier_config.max_tokens,
@@ -263,13 +283,14 @@ async def classify_anomaly(
             logger.warning("Classifier returned empty response")
             return None
 
-    except anthropic.RateLimitError:
-        logger.warning("Classifier rate-limited, skipping classification")
-        return None
-    except anthropic.APIConnectionError:
-        logger.warning("Classifier network error, skipping classification")
-        return None
-    except Exception:
+    except Exception as exc:
+        exc_name = type(exc).__name__
+        if exc_name == "RateLimitError":
+            logger.warning("Classifier rate-limited, skipping classification")
+            return None
+        if exc_name == "APIConnectionError":
+            logger.warning("Classifier network error, skipping classification")
+            return None
         logger.exception("Unexpected classifier error")
         return None
 

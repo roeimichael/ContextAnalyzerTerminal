@@ -36,11 +36,21 @@ def build_envelope(payload: dict) -> dict:
 
     if len(tool_input_str) > 500:
         tool_input_str = tool_input_str[:497] + "..."
+
+    # Strip sensitive content before storing: remove tool_response entirely
+    # and replace tool_input with the truncated summary.
+    sanitized_payload = {
+        k: v
+        for k, v in payload.items()
+        if k not in ("tool_response", "tool_input")
+    }
+    sanitized_payload["tool_input_summary"] = tool_input_str
+
     return {
         "event_type": "PostToolUse",
         "session_id": payload["session_id"],
         "timestamp_ms": int(time.time() * 1000),
-        "payload": payload,
+        "payload": sanitized_payload,
         "tool_name": payload.get("tool_name"),
         "tool_input_summary": tool_input_str,
         "cwd": payload.get("cwd"),
@@ -54,7 +64,7 @@ def get_session_alert(session_id: str) -> str:
     """Query collector for a recent un-notified anomaly and return an alert string."""
     try:
         url = get_collector_url(f"/api/sessions/{session_id}/latest-anomaly")
-        with httpx.Client(timeout=1.0) as client:
+        with httpx.Client(timeout=0.3) as client:
             resp = client.get(url)
             if resp.status_code == 200 and resp.json():
                 a = resp.json()
@@ -73,7 +83,8 @@ def get_session_alert(session_id: str) -> str:
                 if anomaly_id:
                     try:
                         client.post(
-                            get_collector_url(f"/api/anomalies/{anomaly_id}/mark-notified")
+                            get_collector_url(f"/api/anomalies/{anomaly_id}/mark-notified"),
+                            timeout=0.3,
                         )
                     except Exception:
                         pass
@@ -100,7 +111,7 @@ def main() -> None:
 
         envelope = build_envelope(payload)
 
-        with httpx.Client(timeout=TIMEOUT_SECONDS) as client:
+        with httpx.Client(timeout=1.5) as client:
             client.post(COLLECTOR_URL, json=envelope)
 
         # Collect additionalContext from anomaly alerts + pending messages
@@ -116,7 +127,7 @@ def main() -> None:
             # Check pending messages (context threshold warnings, etc.)
             try:
                 url = get_collector_url(f"/api/sessions/{session_id}/pending-messages")
-                with httpx.Client(timeout=1.0) as c:
+                with httpx.Client(timeout=0.3) as c:
                     resp = c.get(url)
                     if resp.status_code == 200:
                         msgs = resp.json().get("messages", [])
