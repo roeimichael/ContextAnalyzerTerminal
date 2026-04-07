@@ -221,7 +221,7 @@ _CAT_FRAMES = [
         ("   z",      "z"),
         ("    /|      _,,,---,,_", "cat"),
         ("   /,`.-'`'    -.  ;-;;,_", "cat"),
-        ("  |,4-  ) )-,_..;\\\(  `'-'", "cat"),
+        ("  |,4-  ) )-,_..;\\\\(  `'-'", "cat"),
         (" <'---''\\_)--'  `-'(_/  ", "cat"),
         (".=======================.", "floor"),
     ],
@@ -469,7 +469,11 @@ def build_sessions_panel(status_data: dict[str, Any] | None) -> Panel:
         # Cache efficiency
         cache_eff = sess.get("cache_efficiency_pct")
         if cache_eff is not None:
-            c_style = "bright_green" if cache_eff >= 80 else "bright_yellow" if cache_eff >= 50 else "bright_red"
+            c_style = (
+                "bright_green" if cache_eff >= 80
+                else "bright_yellow" if cache_eff >= 50
+                else "bright_red"
+            )
             cache_text = Text(f"{cache_eff:.0f}%", style=c_style)
         else:
             cache_text = Text("--", style=_DIM)
@@ -478,7 +482,11 @@ def build_sessions_panel(status_data: dict[str, Any] | None) -> Panel:
         burn = sess.get("burn_rate")
         if burn and burn.get("turns_remaining") is not None:
             turns = burn["turns_remaining"]
-            f_style = "bold bright_red" if turns <= 5 else "bright_yellow" if turns <= 15 else "bright_green"
+            f_style = (
+                "bold bright_red" if turns <= 5
+                else "bright_yellow" if turns <= 15
+                else "bright_green"
+            )
             fill_text = Text(f"~{turns} turns", style=f_style)
         else:
             fill_text = Text("--", style=_DIM)
@@ -659,7 +667,8 @@ def build_anomaly_panel(anomalies: list[dict[str, Any]]) -> Panel:
             cause_truncated,
         )
 
-    table.add_row("", "", "", "", "", Text("Run: context-analyzer-tool anomalies", style="dim italic"))
+    hint = Text("Run: context-analyzer-tool anomalies", style="dim italic")
+    table.add_row("", "", "", "", "", hint)
     return Panel(table, border_style=_BORDER_ANOMALY_ALERT, box=ROUNDED, title_align="left")
 
 
