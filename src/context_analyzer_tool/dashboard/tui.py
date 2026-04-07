@@ -679,7 +679,6 @@ def _build_cat_panel() -> Panel:
         cat_text,
         border_style="grey30",
         box=ROUNDED,
-        style="on grey3",
     )
     return Panel(
         inner,
@@ -687,7 +686,6 @@ def _build_cat_panel() -> Panel:
         title_align="center",
         border_style="bright_yellow",
         box=DOUBLE,
-        style="on grey3",
     )
 
 
