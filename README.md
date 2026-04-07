@@ -129,17 +129,6 @@ Hooks + Statusline → Collector → Delta Engine → Anomaly Detection → Clas
                                        │
                                    Dashboard
 ```
-
-## Roadmap
-
-- [ ] Web UI dashboard (browser-based alternative to TUI)
-- [ ] Windows native notifications
-- [ ] Per-file token attribution (which files you Read most)
-- [ ] Export to CSV / JSON for external analysis
-- [ ] pip installable package (`pip install context-analyzer-tool`)
-
-Want to tackle one of these? Open an issue or check [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Contributing
 
 We welcome contributions! Check out our **[Good First Issues](https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue)** for beginner-friendly tasks with clear guidance.
