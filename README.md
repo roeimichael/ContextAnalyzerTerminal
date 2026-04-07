@@ -37,13 +37,13 @@ uv sync --extra classifier
 
 ```bash
 # Install hooks into Claude Code (also writes default config)
-context-pulse install
+context-analyzer-tool install
 
 # Start the collector (keep running in a terminal)
-context-pulse serve
+context-analyzer-tool serve
 
 # Open the dashboard
-context-pulse dashboard
+context-analyzer-tool dashboard
 ```
 
 That's it. Use Claude Code normally -- CAT tracks everything in the background.
@@ -68,22 +68,22 @@ That's it. Use Claude Code normally -- CAT tracks everything in the background.
 ## CLI Reference
 
 ```
-context-pulse install         Install hooks into Claude Code
-context-pulse uninstall       Remove hooks from Claude Code
-context-pulse serve           Start the collector server
-context-pulse dashboard       Launch the live TUI dashboard
-context-pulse status          View active sessions and recent tasks
-context-pulse anomalies       List recent anomalies with root causes
-context-pulse context-cost    Show context cost breakdown
-context-pulse health          Collector health check
-context-pulse rtk-status      Show RTK integration status and savings
-context-pulse prune           Clean up old data
-context-pulse clear           Clear all stored data and start fresh
+context-analyzer-tool install         Install hooks into Claude Code
+context-analyzer-tool uninstall       Remove hooks from Claude Code
+context-analyzer-tool serve           Start the collector server
+context-analyzer-tool dashboard       Launch the live TUI dashboard
+context-analyzer-tool status          View active sessions and recent tasks
+context-analyzer-tool anomalies       List recent anomalies with root causes
+context-analyzer-tool context-cost    Show context cost breakdown
+context-analyzer-tool health          Collector health check
+context-analyzer-tool rtk-status      Show RTK integration status and savings
+context-analyzer-tool prune           Clean up old data
+context-analyzer-tool clear           Clear all stored data and start fresh
 ```
 
 ## Configuration
 
-Config lives at `~/.context-pulse/config.toml` (created automatically on first `install`). Every setting can be overridden with environment variables using the `CONTEXT_PULSE_` prefix.
+Config lives at `~/.context-analyzer-tool/config.toml` (created automatically on first `install`). Every setting can be overridden with environment variables using the `CAT_` prefix.
 
 ```toml
 [collector]
@@ -108,9 +108,9 @@ webhook_url = ""              # Slack/Discord webhook
 
 Environment variable overrides:
 ```bash
-CONTEXT_PULSE_COLLECTOR_PORT=8080
-CONTEXT_PULSE_ANOMALY_Z_SCORE_THRESHOLD=3.0
-CONTEXT_PULSE_CLASSIFIER_ENABLED=false
+CAT_COLLECTOR_PORT=8080
+CAT_ANOMALY_Z_SCORE_THRESHOLD=3.0
+CAT_CLASSIFIER_ENABLED=false
 ```
 
 ## How It Works

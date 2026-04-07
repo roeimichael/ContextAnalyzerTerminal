@@ -1,4 +1,4 @@
-# Phase 2 Architecture Specification -- context-pulse
+# Phase 2 Architecture Specification -- context-analyzer-tool
 
 > Version: 1.0.0
 > Date: 2026-03-28
@@ -12,24 +12,24 @@
 
 | File | Purpose |
 |---|---|
-| `src/context_pulse/engine/__init__.py` | Package init (empty) |
-| `src/context_pulse/engine/baseline.py` | `RollingWelford` class -- Welford's online algorithm with deque-backed rolling window |
-| `src/context_pulse/engine/anomaly.py` | Z-score anomaly detector -- computes z-score per task, applies thresholds and cooldown |
-| `src/context_pulse/engine/classifier.py` | Haiku classifier call + SQLite-backed response cache |
-| `src/context_pulse/db/baselines.py` | CRUD for the `baselines` table (get, upsert) |
-| `src/context_pulse/db/anomalies.py` | CRUD for the `anomalies` table (insert, query, cooldown check) |
+| `src/context_analyzer_tool/engine/__init__.py` | Package init (empty) |
+| `src/context_analyzer_tool/engine/baseline.py` | `RollingWelford` class -- Welford's online algorithm with deque-backed rolling window |
+| `src/context_analyzer_tool/engine/anomaly.py` | Z-score anomaly detector -- computes z-score per task, applies thresholds and cooldown |
+| `src/context_analyzer_tool/engine/classifier.py` | Haiku classifier call + SQLite-backed response cache |
+| `src/context_analyzer_tool/db/baselines.py` | CRUD for the `baselines` table (get, upsert) |
+| `src/context_analyzer_tool/db/anomalies.py` | CRUD for the `anomalies` table (insert, query, cooldown check) |
 | `tests/test_baseline.py` | Unit tests for `RollingWelford` |
 | `tests/test_anomaly.py` | Unit tests for anomaly detector |
 | `tests/test_classifier.py` | Unit tests for classifier + cache |
 
 No existing files need to be deleted. The following existing files require modifications (detailed in section 7):
 
-- `src/context_pulse/collector/delta_engine.py` -- call anomaly detector after delta assignment
-- `src/context_pulse/collector/routes.py` -- add anomaly API endpoints
-- `src/context_pulse/collector/models.py` -- add new Pydantic response models
-- `src/context_pulse/collector/server.py` -- store config on app.state (already done)
-- `src/context_pulse/cli.py` -- add `anomalies` command
-- `src/context_pulse/db/schema.py` -- add v2 migration for `classifier_cache` table
+- `src/context_analyzer_tool/collector/delta_engine.py` -- call anomaly detector after delta assignment
+- `src/context_analyzer_tool/collector/routes.py` -- add anomaly API endpoints
+- `src/context_analyzer_tool/collector/models.py` -- add new Pydantic response models
+- `src/context_analyzer_tool/collector/server.py` -- store config on app.state (already done)
+- `src/context_analyzer_tool/cli.py` -- add `anomalies` command
+- `src/context_analyzer_tool/db/schema.py` -- add v2 migration for `classifier_cache` table
 - `pyproject.toml` -- add `anthropic` dependency
 
 ---
@@ -63,7 +63,7 @@ ALTER TABLE baselines ADD COLUMN window_json TEXT NOT NULL DEFAULT '[]';
 
 ### 2.3 Migration Registration
 
-In `src/context_pulse/db/schema.py`, add:
+In `src/context_analyzer_tool/db/schema.py`, add:
 
 ```python
 MIGRATIONS: list[tuple[int, str]] = [
@@ -88,7 +88,7 @@ async def _apply_v2(db: aiosqlite.Connection) -> None:
 
 ## 3. Pydantic Models (New)
 
-Add these to `src/context_pulse/collector/models.py`:
+Add these to `src/context_analyzer_tool/collector/models.py`:
 
 ```python
 class BaselineSnapshot(BaseModel):
@@ -142,7 +142,7 @@ class AnomaliesListResponse(BaseModel):
 
 ---
 
-## 4. Welford Baseline Engine (`src/context_pulse/engine/baseline.py`)
+## 4. Welford Baseline Engine (`src/context_analyzer_tool/engine/baseline.py`)
 
 ### 4.1 `RollingWelford` Class
 
@@ -158,9 +158,9 @@ from collections import deque
 
 import aiosqlite
 
-from context_pulse.db import baselines as db_baselines
+from context_analyzer_tool.db import baselines as db_baselines
 
-logger = logging.getLogger("context_pulse.engine.baseline")
+logger = logging.getLogger("context_analyzer_tool.engine.baseline")
 
 
 class RollingWelford:
@@ -376,7 +376,7 @@ The `BaselineManager.record_delta()` is called from the anomaly detector (sectio
 
 ---
 
-## 5. Anomaly Detector (`src/context_pulse/engine/anomaly.py`)
+## 5. Anomaly Detector (`src/context_analyzer_tool/engine/anomaly.py`)
 
 ### 5.1 Core Detection Function
 
@@ -388,13 +388,13 @@ import time
 
 import aiosqlite
 
-from context_pulse.collector.models import AnomalyResult, ClassifierResponse
-from context_pulse.config import AnomalyConfig, ClassifierConfig
-from context_pulse.db import anomalies as db_anomalies
-from context_pulse.engine.baseline import BaselineManager
-from context_pulse.engine.classifier import classify_anomaly
+from context_analyzer_tool.collector.models import AnomalyResult, ClassifierResponse
+from context_analyzer_tool.config import AnomalyConfig, ClassifierConfig
+from context_analyzer_tool.db import anomalies as db_anomalies
+from context_analyzer_tool.engine.baseline import BaselineManager
+from context_analyzer_tool.engine.classifier import classify_anomaly
 
-logger = logging.getLogger("context_pulse.engine.anomaly")
+logger = logging.getLogger("context_analyzer_tool.engine.anomaly")
 
 MIN_STDDEV: float = 100.0  # floor to prevent div-by-zero on uniform data
 
@@ -595,7 +595,7 @@ async def detect_anomaly(
 
 ---
 
-## 6. Haiku Classifier (`src/context_pulse/engine/classifier.py`)
+## 6. Haiku Classifier (`src/context_analyzer_tool/engine/classifier.py`)
 
 ### 6.1 Full Implementation
 
@@ -608,10 +608,10 @@ import time
 
 import aiosqlite
 
-from context_pulse.collector.models import ClassifierResponse
-from context_pulse.config import ClassifierConfig
+from context_analyzer_tool.collector.models import ClassifierResponse
+from context_analyzer_tool.config import ClassifierConfig
 
-logger = logging.getLogger("context_pulse.engine.classifier")
+logger = logging.getLogger("context_analyzer_tool.engine.classifier")
 
 # The system prompt, per project brief section 8
 CLASSIFIER_SYSTEM_PROMPT: str = (
@@ -872,7 +872,7 @@ The classifier must never raise. All errors are caught and logged. The anomaly r
 
 ## 7. Database CRUD
 
-### 7.1 `src/context_pulse/db/baselines.py`
+### 7.1 `src/context_analyzer_tool/db/baselines.py`
 
 ```python
 from __future__ import annotations
@@ -882,7 +882,7 @@ from typing import Any
 
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.db.baselines")
+logger = logging.getLogger("context_analyzer_tool.db.baselines")
 
 
 async def get_baseline(
@@ -949,7 +949,7 @@ async def get_all_baselines(
     return [dict(row) for row in rows]
 ```
 
-### 7.2 `src/context_pulse/db/anomalies.py`
+### 7.2 `src/context_analyzer_tool/db/anomalies.py`
 
 ```python
 from __future__ import annotations
@@ -959,7 +959,7 @@ from typing import Any
 
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.db.anomalies")
+logger = logging.getLogger("context_analyzer_tool.db.anomalies")
 
 
 async def insert_anomaly(
@@ -1129,7 +1129,7 @@ async def process_anomalies(
     list[AnomalyResult]
         Any anomalies detected (may be empty).
     """
-    from context_pulse.engine.anomaly import detect_anomaly
+    from context_analyzer_tool.engine.anomaly import detect_anomaly
 
     anomalies: list[AnomalyResult] = []
     for (task_id, delta, is_compaction), ptc in zip(results, pending_list):
@@ -1233,7 +1233,7 @@ async def get_baseline_manager(request: Request) -> BaselineManager:
 Add `BaselineManager` initialization in the lifespan:
 
 ```python
-from context_pulse.engine.baseline import BaselineManager
+from context_analyzer_tool.engine.baseline import BaselineManager
 
 # Inside lifespan(), after run_migrations(db):
 baseline_manager = BaselineManager(
@@ -1325,7 +1325,7 @@ def anomalies(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Is it running? Start with: [bold]context-pulse serve[/bold]"
+            "Is it running? Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1) from None
     except httpx.HTTPError as exc:
@@ -1420,18 +1420,18 @@ schema.py (modified) ─────────v2 migration
 ### 9.2 Build Order (Parallelism Opportunities)
 
 **Layer 1 -- No dependencies, build in parallel:**
-- `src/context_pulse/db/baselines.py`
-- `src/context_pulse/db/anomalies.py`
-- `src/context_pulse/db/schema.py` (v2 migration addition)
-- `src/context_pulse/engine/__init__.py`
+- `src/context_analyzer_tool/db/baselines.py`
+- `src/context_analyzer_tool/db/anomalies.py`
+- `src/context_analyzer_tool/db/schema.py` (v2 migration addition)
+- `src/context_analyzer_tool/engine/__init__.py`
 - New Pydantic models in `models.py`
 
 **Layer 2 -- Depends on Layer 1:**
-- `src/context_pulse/engine/baseline.py` (depends on `db/baselines.py`)
-- `src/context_pulse/engine/classifier.py` (depends on models, `db` for cache)
+- `src/context_analyzer_tool/engine/baseline.py` (depends on `db/baselines.py`)
+- `src/context_analyzer_tool/engine/classifier.py` (depends on models, `db` for cache)
 
 **Layer 3 -- Depends on Layer 2:**
-- `src/context_pulse/engine/anomaly.py` (depends on `engine/baseline.py`, `engine/classifier.py`, `db/anomalies.py`)
+- `src/context_analyzer_tool/engine/anomaly.py` (depends on `engine/baseline.py`, `engine/classifier.py`, `db/anomalies.py`)
 
 **Layer 4 -- Depends on Layer 3:**
 - Modifications to `delta_engine.py` (depends on `engine/anomaly.py`)
@@ -1498,7 +1498,7 @@ import aiosqlite
 import pytest
 import pytest_asyncio
 
-from context_pulse.engine.baseline import BaselineManager, RollingWelford
+from context_analyzer_tool.engine.baseline import BaselineManager, RollingWelford
 
 
 # -------------------------------------------------------------------
@@ -1623,7 +1623,7 @@ class TestBaselineManager:
         for v in [100, 200, 300]:
             await mgr.record_delta("Read", float(v))
         # After 3 samples (= update_interval), should be in DB
-        from context_pulse.db import baselines as db_baselines
+        from context_analyzer_tool.db import baselines as db_baselines
         row = await db_baselines.get_baseline(db_connection, "Read")
         assert row is not None
         assert row["sample_count"] == 3
@@ -1652,7 +1652,7 @@ class TestBaselineManager:
         await mgr.record_delta("Bash", 1000.0)
         await mgr.record_delta("Read", 500.0)
         await mgr.flush_all()
-        from context_pulse.db import baselines as db_baselines
+        from context_analyzer_tool.db import baselines as db_baselines
         bash_row = await db_baselines.get_baseline(db_connection, "Bash")
         read_row = await db_baselines.get_baseline(db_connection, "Read")
         assert bash_row is not None
@@ -1672,10 +1672,10 @@ from unittest.mock import AsyncMock, patch
 
 import aiosqlite
 
-from context_pulse.collector.models import AnomalyResult
-from context_pulse.config import AnomalyConfig, ClassifierConfig
-from context_pulse.engine.anomaly import MIN_STDDEV, detect_anomaly
-from context_pulse.engine.baseline import BaselineManager
+from context_analyzer_tool.collector.models import AnomalyResult
+from context_analyzer_tool.config import AnomalyConfig, ClassifierConfig
+from context_analyzer_tool.engine.anomaly import MIN_STDDEV, detect_anomaly
+from context_analyzer_tool.engine.baseline import BaselineManager
 
 
 class TestDetectAnomaly:
@@ -1936,9 +1936,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiosqlite
 
-from context_pulse.collector.models import ClassifierResponse
-from context_pulse.config import ClassifierConfig
-from context_pulse.engine.classifier import (
+from context_analyzer_tool.collector.models import ClassifierResponse
+from context_analyzer_tool.config import ClassifierConfig
+from context_analyzer_tool.engine.classifier import (
     _build_user_prompt,
     _compute_cache_key,
     _parse_classifier_output,
@@ -2066,7 +2066,7 @@ class TestClassifyAnomaly:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "context_pulse.engine.classifier.anthropic"
+            "context_analyzer_tool.engine.classifier.anthropic"
         ) as mock_module:
             mock_module.AsyncAnthropic.return_value = mock_client
             mock_module.RateLimitError = Exception
@@ -2129,7 +2129,7 @@ class TestClassifyAnomaly:
         cfg = ClassifierConfig(enabled=True, cache_results=False)
 
         with patch(
-            "context_pulse.engine.classifier.anthropic"
+            "context_analyzer_tool.engine.classifier.anthropic"
         ) as mock_module:
             rate_limit_error = type("RateLimitError", (Exception,), {})
             mock_module.RateLimitError = rate_limit_error
@@ -2162,7 +2162,7 @@ The existing `tests/conftest.py` provides `db_connection` (in-memory SQLite with
 
 ### 11.5 Mock Strategy for Anthropic SDK
 
-The `anthropic` module is imported inside `classify_anomaly()` at call time (not at module level). Tests mock it via `unittest.mock.patch("context_pulse.engine.classifier.anthropic")`. The mock must provide:
+The `anthropic` module is imported inside `classify_anomaly()` at call time (not at module level). Tests mock it via `unittest.mock.patch("context_analyzer_tool.engine.classifier.anthropic")`. The mock must provide:
 
 - `AsyncAnthropic()` returning a mock client
 - `client.messages.create()` as an `AsyncMock` returning a mock message
@@ -2174,21 +2174,21 @@ The `anthropic` module is imported inside `classify_anomaly()` at call time (not
 ## 12. Summary of All File Changes
 
 ### New files:
-1. `src/context_pulse/engine/__init__.py` -- empty
-2. `src/context_pulse/engine/baseline.py` -- `RollingWelford`, `BaselineManager`
-3. `src/context_pulse/engine/anomaly.py` -- `detect_anomaly()`, `MIN_STDDEV`
-4. `src/context_pulse/engine/classifier.py` -- `classify_anomaly()`, cache helpers, prompt constants
-5. `src/context_pulse/db/baselines.py` -- `get_baseline()`, `upsert_baseline()`, `get_all_baselines()`
-6. `src/context_pulse/db/anomalies.py` -- `insert_anomaly()`, `update_anomaly_classification()`, `check_cooldown()`, `get_recent_anomalies()`, `get_anomaly_count()`
+1. `src/context_analyzer_tool/engine/__init__.py` -- empty
+2. `src/context_analyzer_tool/engine/baseline.py` -- `RollingWelford`, `BaselineManager`
+3. `src/context_analyzer_tool/engine/anomaly.py` -- `detect_anomaly()`, `MIN_STDDEV`
+4. `src/context_analyzer_tool/engine/classifier.py` -- `classify_anomaly()`, cache helpers, prompt constants
+5. `src/context_analyzer_tool/db/baselines.py` -- `get_baseline()`, `upsert_baseline()`, `get_all_baselines()`
+6. `src/context_analyzer_tool/db/anomalies.py` -- `insert_anomaly()`, `update_anomaly_classification()`, `check_cooldown()`, `get_recent_anomalies()`, `get_anomaly_count()`
 7. `tests/test_baseline.py`
 8. `tests/test_anomaly.py`
 9. `tests/test_classifier.py`
 
 ### Modified files:
-1. `src/context_pulse/db/schema.py` -- add v2 migration (classifier_cache table + baselines columns)
-2. `src/context_pulse/collector/models.py` -- add `BaselineSnapshot`, `AnomalyResult`, `ClassifierResponse`, `AnomalyResponse`, `AnomaliesListResponse`
-3. `src/context_pulse/collector/delta_engine.py` -- add `tool_input_summary` field to `PendingToolCall`, add `process_anomalies()` function
-4. `src/context_pulse/collector/routes.py` -- add `get_baseline_manager` dependency, modify `receive_statusline_snapshot` to call `process_anomalies()`, add `GET /api/anomalies` and `GET /api/baselines` endpoints
-5. `src/context_pulse/collector/server.py` -- create `BaselineManager` in lifespan, store on `app.state`, flush on shutdown
-6. `src/context_pulse/cli.py` -- add `anomalies` command
+1. `src/context_analyzer_tool/db/schema.py` -- add v2 migration (classifier_cache table + baselines columns)
+2. `src/context_analyzer_tool/collector/models.py` -- add `BaselineSnapshot`, `AnomalyResult`, `ClassifierResponse`, `AnomalyResponse`, `AnomaliesListResponse`
+3. `src/context_analyzer_tool/collector/delta_engine.py` -- add `tool_input_summary` field to `PendingToolCall`, add `process_anomalies()` function
+4. `src/context_analyzer_tool/collector/routes.py` -- add `get_baseline_manager` dependency, modify `receive_statusline_snapshot` to call `process_anomalies()`, add `GET /api/anomalies` and `GET /api/baselines` endpoints
+5. `src/context_analyzer_tool/collector/server.py` -- create `BaselineManager` in lifespan, store on `app.state`, flush on shutdown
+6. `src/context_analyzer_tool/cli.py` -- add `anomalies` command
 7. `pyproject.toml` -- add `anthropic>=0.43.0` to dependencies

@@ -1,4 +1,4 @@
-"""In-session alert formatter for context-pulse (Phase 3).
+"""In-session alert formatter for context-analyzer-tool (Phase 3).
 
 Produces human-readable alert strings intended for injection into Claude
 Code's ``additionalContext`` field via the PostToolUse hook.  When Claude
@@ -46,14 +46,14 @@ def format_session_alert(
     Examples
     --------
     >>> format_session_alert("Bash", 8400, 4.2, 2000.0, None, None)
-    '[context-pulse] ⚠ Last Bash command cost 8,400 tokens (4.2σ above your baseline of 2,000).'
+    '[CAT] ⚠ Last Bash command cost 8,400 tokens (4.2σ above your baseline of 2,000).'
     """
     tokens_str = _format_tokens(token_delta)
     mean_str = _format_tokens(int(baseline_mean))
     z_str = f"{z_score:.1f}"
 
     headline = (
-        f"[context-pulse] \u26a0 Last {task_type} command cost {tokens_str} tokens "
+        f"[CAT] \u26a0 Last {task_type} command cost {tokens_str} tokens "
         f"({z_str}\u03c3 above your baseline of {mean_str})."
     )
 

@@ -1,4 +1,4 @@
-"""OS-level desktop notifications for context-pulse (Phase 3).
+"""OS-level desktop notifications for context-analyzer-tool (Phase 3).
 
 Sends platform-specific system notifications when anomalies are detected.
 Supports Windows (PowerShell balloon tips), macOS (``osascript``), and
@@ -15,7 +15,7 @@ import logging
 import re
 import sys
 
-logger = logging.getLogger("context_pulse.notify.system")
+logger = logging.getLogger("context_analyzer_tool.notify.system")
 
 
 # ---------------------------------------------------------------------------
@@ -288,7 +288,7 @@ def format_anomaly_notification(
         ``(title, message)`` ready for :func:`send_system_notification`.
     """
     severity = _severity_label(z_score)
-    title = f"\u26a0 context-pulse \u2014 {severity} token spike"
+    title = f"\u26a0 context-analyzer-tool \u2014 {severity} token spike"
 
     # Compute the multiplier relative to baseline
     if baseline_mean > 0:

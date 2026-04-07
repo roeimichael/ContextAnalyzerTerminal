@@ -4,7 +4,7 @@
 # ///
 
 """
-context-pulse hook: UserPromptSubmit
+context-analyzer-tool hook: UserPromptSubmit
 Reads hook payload from stdin, POSTs to collector, exits 0.
 """
 

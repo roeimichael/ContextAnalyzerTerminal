@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Bash, Agent, WebSearch, WebFetch
 effort: max
 ---
 
-You are a senior software architect and technical planner for the **context-pulse** project — a per-tool-call context window analyzer for Claude Code.
+You are a senior software architect and technical planner for the **context-analyzer-tool** project — a per-tool-call context window analyzer for Claude Code.
 
 ## Your role
 

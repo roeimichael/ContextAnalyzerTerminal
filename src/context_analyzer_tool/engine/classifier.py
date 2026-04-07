@@ -18,10 +18,10 @@ from typing import Any
 
 import aiosqlite
 
-from context_pulse.collector.models import ClassifierResponse
-from context_pulse.config import ClassifierConfig
+from context_analyzer_tool.collector.models import ClassifierResponse
+from context_analyzer_tool.config import ClassifierConfig
 
-logger = logging.getLogger("context_pulse.engine.classifier")
+logger = logging.getLogger("context_analyzer_tool.engine.classifier")
 
 # ---------------------------------------------------------------------------
 # Cached Anthropic client (avoid re-creation on every call)

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0 (2026-04-07)
+
+### Project Rename
+
+- **Renamed from `context-pulse` to `context-analyzer-tool`** -- package, module, CLI entry point, and all internal references updated
+
+### TUI Visual Overhaul
+
+- **New color theme** -- vibrant `bright_*` color palette with centralized theme constants replacing scattered hardcoded styles
+- **Distinct panel frames** -- each panel type has its own Rich box style: `HEAVY` header, `ROUNDED` sessions/anomalies, `DOUBLE` tasks
+- **Alternating row highlights** -- zebra-striping on all tables for improved readability
+- **Unicode panel icons** -- `⭐` header, `☰` sessions, `▒` tasks, `⚠` anomalies, `⚙` RTK
+- **Header bar redesign** -- stats separated by `│` dividers with `⏱` `⚡` `▣` icons
+- **Sleeping cat animation** -- 20-frame ASCII cat in the bottom-left "nap zone" with drifting z's, subtle ear twitches, and a brief wake-up frame
+- **Double-bordered nap zone** -- outer `DOUBLE` frame with inner `ROUNDED` border confining the cat art
+- **Faster refresh** -- default refresh rate increased from 2s to 1s for smoother animations
+
 ## 0.2.0 (2026-04-05)
 
 ### Smart Warnings & Cache Awareness
@@ -13,7 +30,7 @@
 - **Compaction tracking** -- PreCompact/PostCompact hooks track compaction events with tokens saved
 - **Compaction API endpoint** -- `/api/compactions` for querying compaction history
 - **Burn rate API endpoint** -- `/api/sessions/{id}/burn-rate` for programmatic access
-- **Uninstall command** -- `context-pulse uninstall` cleanly removes hooks from Claude Code
+- **Uninstall command** -- `context-analyzer-tool uninstall` cleanly removes hooks from Claude Code
 
 ### Improvements
 

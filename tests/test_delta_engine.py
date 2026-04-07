@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 import aiosqlite
 
-from context_pulse.collector.delta_engine import (
+from context_analyzer_tool.collector.delta_engine import (
     SessionState,
     cleanup_stale_sessions,
     on_session_stop,
@@ -15,8 +15,8 @@ from context_pulse.collector.delta_engine import (
     on_tool_use,
     restore_sessions_from_db,
 )
-from context_pulse.collector.models import HookEventRequest, StatuslineSnapshotRequest
-from context_pulse.db import events as db_events
+from context_analyzer_tool.collector.models import HookEventRequest, StatuslineSnapshotRequest
+from context_analyzer_tool.db import events as db_events
 
 # ---------------------------------------------------------------------------
 # Helpers

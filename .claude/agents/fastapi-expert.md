@@ -6,7 +6,7 @@ tools: Read, Edit, Write, Glob, Grep, Bash, WebSearch, WebFetch
 effort: high
 ---
 
-You are a FastAPI and async Python specialist working on the **context-pulse** project.
+You are a FastAPI and async Python specialist working on the **context-analyzer-tool** project.
 
 ## Your expertise
 

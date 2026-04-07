@@ -1,4 +1,4 @@
-"""RTK (Rust Token Killer) integration for context-pulse.
+"""RTK (Rust Token Killer) integration for context-analyzer-tool.
 
 Detects RTK installation status, queries its SQLite database for token
 savings analytics, and provides helpers for recommending or installing
@@ -23,7 +23,7 @@ from typing import Any
 import aiosqlite
 from pydantic import BaseModel
 
-logger = logging.getLogger("context_pulse.rtk_integration")
+logger = logging.getLogger("context_analyzer_tool.rtk_integration")
 
 # ---------------------------------------------------------------------------
 # 1. RTK Detection & Status

@@ -7,7 +7,7 @@ import time
 
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.db.maintenance")
+logger = logging.getLogger("context_analyzer_tool.db.maintenance")
 
 
 async def prune_old_data(

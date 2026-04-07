@@ -1,4 +1,4 @@
-"""CLI entry point for context-pulse, built with Typer."""
+"""CLI entry point for context-analyzer-tool, built with Typer."""
 
 from __future__ import annotations
 
@@ -15,19 +15,19 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from context_pulse.config import (
+from context_analyzer_tool.config import (
     get_config_dir,
     get_config_path,
     load_config,
     write_default_config,
 )
 
-logger = logging.getLogger("context_pulse.cli")
+logger = logging.getLogger("context_analyzer_tool.cli")
 
 console = Console()
 
 app = typer.Typer(
-    name="context-pulse",
+    name="context-analyzer-tool",
     help="Per-tool-call context window analyzer for Claude Code",
 )
 
@@ -70,7 +70,7 @@ _HOOK_EVENT_MAP: dict[str, str] = {
     "post_compact.py": "PostCompact",
 }
 
-_CONTEXT_PULSE_MARKER = "context-pulse"
+_CAT_MARKER = "context-analyzer-tool"
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def _find_hooks_source_dir() -> Path:
     We look relative to this file first (development layout), then try
     importlib.resources for installed packages.
     """
-    # Development layout: src/context_pulse/cli.py -> ../../hooks/
+    # Development layout: src/context_analyzer_tool/cli.py -> ../../hooks/
     dev_hooks = Path(__file__).resolve().parent.parent.parent / "hooks"
     if dev_hooks.is_dir():
         return dev_hooks
@@ -94,7 +94,7 @@ def _find_hooks_source_dir() -> Path:
         import importlib.resources as ir
 
         # Python 3.12+ files() API
-        ref = ir.files("context_pulse").joinpath("hooks")
+        ref = ir.files("context_analyzer_tool").joinpath("hooks")
         if hasattr(ref, "_path"):
             p = Path(str(ref._path))  # type: ignore[attr-defined]
             if p.is_dir():
@@ -136,7 +136,7 @@ def _copy_hook_scripts(hooks_dir: Path) -> list[str]:
 def _build_hooks_config(
     hooks_dir: Path, use_http: bool = False,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Build the hooks portion of settings.json for context-pulse."""
+    """Build the hooks portion of settings.json for context-analyzer-tool."""
     hooks_config: dict[str, list[dict[str, Any]]] = {}
     for script_name, event_name in _HOOK_EVENT_MAP.items():
         script_path = hooks_dir / script_name
@@ -176,11 +176,11 @@ def _build_statusline_config(hooks_dir: Path) -> dict[str, str]:
     }
 
 
-def _is_context_pulse_hook(hook_entry: dict[str, Any]) -> bool:
-    """Check if a hook entry belongs to context-pulse."""
+def _is_context_analyzer_tool_hook(hook_entry: dict[str, Any]) -> bool:
+    """Check if a hook entry belongs to context-analyzer-tool."""
     command: str = hook_entry.get("command", "")
     url: str = hook_entry.get("url", "")
-    return _CONTEXT_PULSE_MARKER in command or _CONTEXT_PULSE_MARKER in url
+    return _CAT_MARKER in command or _CAT_MARKER in url
 
 
 def _merge_settings(
@@ -188,9 +188,9 @@ def _merge_settings(
     hooks_dir: Path,
     use_http: bool = False,
 ) -> dict[str, Any]:
-    """Merge context-pulse hooks into existing settings.json content.
+    """Merge context-analyzer-tool hooks into existing settings.json content.
 
-    Preserves existing non-context-pulse hooks for each event type.
+    Preserves existing non-context-analyzer-tool hooks for each event type.
     """
     settings: dict[str, Any] = dict(existing)
 
@@ -201,11 +201,11 @@ def _merge_settings(
     for event_name, new_entries in new_hooks_config.items():
         existing_entries: list[dict[str, Any]] = current_hooks.get(event_name, [])
 
-        # Remove any existing context-pulse entries for this event
+        # Remove any existing context-analyzer-tool entries for this event
         cleaned: list[dict[str, Any]] = []
         for entry in existing_entries:
             inner_hooks: list[dict[str, Any]] = entry.get("hooks", [])
-            non_cp = [h for h in inner_hooks if not _is_context_pulse_hook(h)]
+            non_cp = [h for h in inner_hooks if not _is_context_analyzer_tool_hook(h)]
             if non_cp:
                 cleaned.append({**entry, "hooks": non_cp})
         # Append our new entries
@@ -218,16 +218,16 @@ def _merge_settings(
     new_statusline: dict[str, str] = _build_statusline_config(hooks_dir)
     existing_sl: dict[str, Any] = settings.get("statusLine", {})
 
-    # Only overwrite if it's empty or already belongs to context-pulse.
-    # Respect existing non-context-pulse statusLines.
+    # Only overwrite if it's empty or already belongs to context-analyzer-tool.
+    # Respect existing non-context-analyzer-tool statusLines.
     sl_cmd: str = existing_sl.get("command", "")
-    if not existing_sl or _CONTEXT_PULSE_MARKER in sl_cmd:
+    if not existing_sl or _CAT_MARKER in sl_cmd:
         settings["statusLine"] = new_statusline
     else:
         logger.warning(
-            "Existing statusLine found that does not belong to context-pulse. "
+            "Existing statusLine found that does not belong to context-analyzer-tool. "
             "Keeping existing statusLine. Remove the existing statusLine entry "
-            "manually to use context-pulse statusline."
+            "manually to use context-analyzer-tool statusline."
         )
 
     return settings
@@ -268,15 +268,15 @@ def serve(
     ),
     log_level: str = typer.Option("info", help="Log level"),
 ) -> None:
-    """Start the context-pulse collector server."""
+    """Start the context-analyzer-tool collector server."""
     try:
         import uvicorn
 
-        from context_pulse.collector.server import create_app
+        from context_analyzer_tool.collector.server import create_app
     except ImportError as exc:
         console.print(
             f"[red]Missing dependency:[/red] {exc}. "
-            "Install with: [bold]pip install context-pulse[/bold]"
+            "Install with: [bold]pip install context-analyzer-tool[/bold]"
         )
         raise typer.Exit(1) from None
 
@@ -305,7 +305,7 @@ def serve(
         if "address already in use" in exc_lower or "error while attempting to bind" in exc_lower:
             console.print(
                 f"[red]Port {actual_port} is already in use.[/red] "
-                "Is another context-pulse instance running? "
+                "Is another context-analyzer-tool instance running? "
                 f"Use [bold]--port[/bold] to specify a different port."
             )
         else:
@@ -331,7 +331,7 @@ def status(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Is it running? Start with: [bold]context-pulse serve[/bold]"
+            "Is it running? Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1) from None
     except httpx.HTTPStatusError as exc:
@@ -418,7 +418,7 @@ def health(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Is it running? Start with: [bold]context-pulse serve[/bold]"
+            "Is it running? Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1) from None
     except httpx.HTTPError as exc:
@@ -493,7 +493,7 @@ def install(
         raise typer.Exit(1) from None
 
 
-# Alias: `context-pulse init` does the same as `context-pulse install`
+# Alias: `context-analyzer-tool init` does the same as `context-analyzer-tool install`
 app.command(name="init", hidden=True)(install)
 
 
@@ -508,10 +508,10 @@ def uninstall(
     remove_hooks: bool = typer.Option(
         False,
         "--remove-hooks",
-        help="Also delete the hook scripts from ~/.context-pulse/hooks/",
+        help="Also delete the hook scripts from ~/.context-analyzer-tool/hooks/",
     ),
 ) -> None:
-    """Remove context-pulse hooks and statusline from Claude Code settings."""
+    """Remove context-analyzer-tool hooks and statusline from Claude Code settings."""
     if claude_settings is None:  # pyright: ignore[reportUnnecessaryComparison]
         claude_settings = _default_claude_settings()
     try:
@@ -549,7 +549,7 @@ def _run_uninstall(
         console.print(f"[red]Could not parse settings.json:[/red] {exc}")
         raise typer.Exit(1) from None
 
-    # 2. Filter out context-pulse hook entries
+    # 2. Filter out context-analyzer-tool hook entries
     current_hooks = cast(dict[str, Any], settings.get("hooks", {}))
     hooks_removed = 0
     cleaned_hooks: dict[str, Any] = {}
@@ -562,7 +562,7 @@ def _run_uninstall(
         cleaned_entries: list[dict[str, Any]] = []
         for entry in typed_entries:
             inner_hooks = cast(list[dict[str, Any]], entry.get("hooks", []))
-            non_cp = [h for h in inner_hooks if not _is_context_pulse_hook(h)]
+            non_cp = [h for h in inner_hooks if not _is_context_analyzer_tool_hook(h)]
             removed_count = len(inner_hooks) - len(non_cp)
             hooks_removed += removed_count
             if non_cp:
@@ -575,11 +575,11 @@ def _run_uninstall(
     elif "hooks" in settings:
         del settings["hooks"]
 
-    # 3. Remove statusLine if it belongs to context-pulse
+    # 3. Remove statusLine if it belongs to context-analyzer-tool
     statusline_removed = False
     existing_sl: dict[str, Any] = settings.get("statusLine", {})
     sl_cmd: str = existing_sl.get("command", "")
-    if existing_sl and _CONTEXT_PULSE_MARKER in sl_cmd:
+    if existing_sl and _CAT_MARKER in sl_cmd:
         del settings["statusLine"]
         statusline_removed = True
 
@@ -612,7 +612,7 @@ def _run_uninstall(
             f"StatusLine removed:  {'yes' if statusline_removed else 'no'}\n"
             f"Hook scripts deleted: {'yes' if hooks_deleted else 'no'}\n"
             f"Settings:            {claude_settings}",
-            title="context-pulse",
+            title="context-analyzer-tool",
             border_style="green",
         )
     )
@@ -628,7 +628,7 @@ def _run_install(
     if not use_http and not shutil.which("uv"):
         console.print(
             "[red]'uv' not found on PATH.[/red] "
-            "context-pulse hooks require uv to run. "
+            "context-analyzer-tool hooks require uv to run. "
             "Install it from [bold]https://docs.astral.sh/uv/[/bold] "
             "or use [bold]--use-http[/bold] to skip command hooks."
         )
@@ -691,7 +691,7 @@ def _run_install(
     except Exception:
         console.print(
             "  [yellow]Collector is not running.[/yellow] "
-            "Start it with: [bold]context-pulse serve[/bold]"
+            "Start it with: [bold]context-analyzer-tool serve[/bold]"
         )
 
     # 8. Summary
@@ -705,16 +705,16 @@ def _run_install(
             f"Config:    {config_path}\n"
             f"Settings:  {claude_settings}\n\n"
             "Next steps:\n"
-            "  1. Start the collector:  [bold]context-pulse serve[/bold]\n"
-            "  2. Check health:         [bold]context-pulse health[/bold]\n"
-            "  3. View status:          [bold]context-pulse status[/bold]",
-            title="context-pulse",
+            "  1. Start the collector:  [bold]context-analyzer-tool serve[/bold]\n"
+            "  2. Check health:         [bold]context-analyzer-tool health[/bold]\n"
+            "  3. View status:          [bold]context-analyzer-tool status[/bold]",
+            title="context-analyzer-tool",
             border_style="green",
         )
     )
 
     # 9. Check and offer RTK integration
-    from context_pulse.rtk_integration import (
+    from context_analyzer_tool.rtk_integration import (
         install_rtk_hooks,
         is_rtk_hooks_installed,
         is_rtk_installed,
@@ -762,7 +762,7 @@ def anomalies(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Is it running? Start with: [bold]context-pulse serve[/bold]"
+            "Is it running? Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1) from None
     except httpx.HTTPError as exc:
@@ -832,10 +832,10 @@ def dashboard(
     refresh: float = typer.Option(2.0, help="Refresh interval in seconds"),
 ) -> None:
     """Launch the live TUI dashboard (Ctrl+C to exit)."""
-    from context_pulse.dashboard.tui import run_dashboard
+    from context_analyzer_tool.dashboard.tui import run_dashboard
 
     console.print(
-        f"[bold]Starting context-pulse dashboard[/bold] "
+        f"[bold]Starting context-analyzer-tool dashboard[/bold] "
         f"(collector: 127.0.0.1:{port}, refresh: {refresh}s)"
     )
     console.print("[dim]Press Ctrl+C to stop.[/dim]\n")
@@ -847,7 +847,7 @@ def rtk_status(
     port: int | None = typer.Option(None, help="Collector port (default: from config)"),
 ) -> None:
     """Show RTK (Rust Token Killer) integration status and savings."""
-    from context_pulse.rtk_integration import (
+    from context_analyzer_tool.rtk_integration import (
         get_rtk_savings_summary,
         get_rtk_version,
         is_rtk_hooks_installed,
@@ -903,7 +903,7 @@ def context_cost(
     """
     import httpx
 
-    from context_pulse.engine.context_breakdown import (
+    from context_analyzer_tool.engine.context_breakdown import (
         compute_breakdown,
         format_breakdown_table,
     )
@@ -918,7 +918,7 @@ def context_cost(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Start with: [bold]context-pulse serve[/bold]"
+            "Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1) from None
 
@@ -1023,7 +1023,7 @@ def clear(
     except (httpx.ConnectError, httpx.ConnectTimeout):
         pass  # Good — collector is stopped
 
-    from context_pulse.config import get_db_path, load_config
+    from context_analyzer_tool.config import get_db_path, load_config
 
     cfg = load_config()
     db_path = Path(get_db_path(cfg))
@@ -1047,7 +1047,7 @@ def clear(
     db_path.unlink()
     console.print(
         f"[green]Cleared.[/green] Deleted {db_path} ({size_kb} KB)\n"
-        "Start the collector again: [bold]context-pulse serve[/bold]"
+        "Start the collector again: [bold]context-analyzer-tool serve[/bold]"
     )
 
 
@@ -1062,9 +1062,9 @@ def prune(
     """
     import asyncio
 
-    from context_pulse.config import get_db_path
-    from context_pulse.db.maintenance import get_table_counts, prune_old_data
-    from context_pulse.db.schema import open_db
+    from context_analyzer_tool.config import get_db_path
+    from context_analyzer_tool.db.maintenance import get_table_counts, prune_old_data
+    from context_analyzer_tool.db.schema import open_db
 
     cfg = load_config()
     retention = days if days is not None else cfg.retention.retention_days

@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from context_pulse.config import (
-    ContextPulseConfig,
+from context_analyzer_tool.config import (
+    CATConfig,
     get_db_path,
     load_config,
     write_default_config,
@@ -20,17 +20,17 @@ from context_pulse.config import (
 
 
 def test_default_config(monkeypatch: pytest.MonkeyPatch) -> None:
-    """ContextPulseConfig() with no arguments should have correct defaults."""
-    # Clear any CONTEXT_PULSE_* env vars that could override defaults.
+    """CATConfig() with no arguments should have correct defaults."""
+    # Clear any CAT_* env vars that could override defaults.
     for key in list(os.environ):
-        if key.startswith("CONTEXT_PULSE_"):
+        if key.startswith("CAT_"):
             monkeypatch.delenv(key)
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.collector.host == "127.0.0.1"
     assert cfg.collector.port == 7821
-    assert cfg.collector.db_path == "~/.context-pulse/context_pulse.db"
+    assert cfg.collector.db_path == "~/.context-analyzer-tool/context_analyzer_tool.db"
 
     assert cfg.anomaly.z_score_threshold == 2.0
     assert cfg.anomaly.min_sample_count == 5
@@ -112,46 +112,46 @@ def test_missing_config_uses_defaults(tmp_path: Path) -> None:
 
 
 def test_env_var_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    """CONTEXT_PULSE_COLLECTOR_PORT should override the default port."""
-    monkeypatch.setenv("CONTEXT_PULSE_COLLECTOR_PORT", "1234")
+    """CAT_COLLECTOR_PORT should override the default port."""
+    monkeypatch.setenv("CAT_COLLECTOR_PORT", "1234")
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.collector.port == 1234
 
 
 def test_env_var_override_bool(monkeypatch: pytest.MonkeyPatch) -> None:
     """Boolean env vars should be coerced correctly."""
-    monkeypatch.setenv("CONTEXT_PULSE_CLASSIFIER_ENABLED", "false")
+    monkeypatch.setenv("CAT_CLASSIFIER_ENABLED", "false")
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.classifier.enabled is False
 
 
 def test_env_var_override_float(monkeypatch: pytest.MonkeyPatch) -> None:
     """Float env vars should be coerced correctly."""
-    monkeypatch.setenv("CONTEXT_PULSE_ANOMALY_Z_SCORE_THRESHOLD", "4.5")
+    monkeypatch.setenv("CAT_ANOMALY_Z_SCORE_THRESHOLD", "4.5")
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.anomaly.z_score_threshold == 4.5
 
 
 def test_env_var_override_list(monkeypatch: pytest.MonkeyPatch) -> None:
     """List env vars should be split on commas."""
-    monkeypatch.setenv("CONTEXT_PULSE_ANOMALY_TASK_TYPES_IGNORED", "chat,edit,search")
+    monkeypatch.setenv("CAT_ANOMALY_TASK_TYPES_IGNORED", "chat,edit,search")
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.anomaly.task_types_ignored == ["chat", "edit", "search"]
 
 
 def test_env_var_override_string(monkeypatch: pytest.MonkeyPatch) -> None:
     """String env vars should be set directly."""
-    monkeypatch.setenv("CONTEXT_PULSE_COLLECTOR_HOST", "0.0.0.0")
+    monkeypatch.setenv("CAT_COLLECTOR_HOST", "0.0.0.0")
 
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
 
     assert cfg.collector.host == "0.0.0.0"
 
@@ -163,7 +163,7 @@ def test_env_var_override_string(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_db_path_expansion() -> None:
     """The tilde in db_path should be expanded to the user's home directory."""
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
     resolved = get_db_path(cfg)
 
     # The resolved path should NOT contain a tilde.
@@ -174,7 +174,7 @@ def test_db_path_expansion() -> None:
 
 def test_db_path_expansion_custom() -> None:
     """A custom db_path with ~ should also be expanded."""
-    cfg = ContextPulseConfig()
+    cfg = CATConfig()
     cfg.collector.db_path = "~/my-data/pulse.db"
     resolved = get_db_path(cfg)
 

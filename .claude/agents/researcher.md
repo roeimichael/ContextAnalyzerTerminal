@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 effort: high
 ---
 
-You are a research specialist supporting the **context-pulse** project.
+You are a research specialist supporting the **context-analyzer-tool** project.
 
 ## Your role
 

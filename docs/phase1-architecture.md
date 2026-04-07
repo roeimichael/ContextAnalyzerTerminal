@@ -1,4 +1,4 @@
-# Phase 1 Architecture Specification -- context-pulse
+# Phase 1 Architecture Specification -- context-analyzer-tool
 
 > Version: 1.0.0
 > Date: 2026-03-28
@@ -26,7 +26,7 @@ All models use `pydantic.BaseModel`. Field names match the exact JSON keys from 
 ### 1.1 Hook Payload Models (inbound from hook scripts)
 
 ```python
-# src/context_pulse/collector/models.py
+# src/context_analyzer_tool/collector/models.py
 
 from __future__ import annotations
 from pydantic import BaseModel, Field, field_validator
@@ -90,7 +90,7 @@ class UserPromptSubmitPayload(BaseModel):
 ### 1.2 Statusline Payload Model (inbound from statusline script)
 
 ```python
-# Also in src/context_pulse/collector/models.py
+# Also in src/context_analyzer_tool/collector/models.py
 
 class StatuslineCurrentUsage(BaseModel):
     """Token counts for the current API turn."""
@@ -317,7 +317,7 @@ class HealthResponse(BaseModel):
 ### 1.6 Configuration Model
 
 ```python
-# src/context_pulse/config.py
+# src/context_analyzer_tool/config.py
 
 from pydantic import BaseModel, Field
 from pathlib import Path
@@ -326,7 +326,7 @@ from pathlib import Path
 class CollectorConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 7821
-    db_path: str = "~/.context-pulse/context_pulse.db"
+    db_path: str = "~/.context-analyzer-tool/context_analyzer_tool.db"
 
 
 class AnomalyConfig(BaseModel):
@@ -356,7 +356,7 @@ class DashboardConfig(BaseModel):
     web_port: int = 7822
 
 
-class ContextPulseConfig(BaseModel):
+class CATConfig(BaseModel):
     """Root configuration model. Maps 1:1 to config.toml sections."""
     collector: CollectorConfig = Field(default_factory=CollectorConfig)
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
@@ -499,7 +499,7 @@ Where `t_prev` is the snapshot immediately before this tool call (from the previ
 ### 3.2 In-Memory State Per Session
 
 ```python
-# src/context_pulse/collector/delta_engine.py
+# src/context_analyzer_tool/collector/delta_engine.py
 
 from dataclasses import dataclass, field
 from collections import deque
@@ -595,7 +595,7 @@ Hook Script (PostToolUse)         Statusline Script
 
 ## 4. Component Interfaces
 
-### 4.1 `src/context_pulse/collector/server.py` -- FastAPI App
+### 4.1 `src/context_analyzer_tool/collector/server.py` -- FastAPI App
 
 ```python
 """FastAPI application factory and lifespan management."""
@@ -609,7 +609,7 @@ from fastapi import FastAPI
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Startup:
-      - Load config from ~/.context-pulse/config.toml
+      - Load config from ~/.context-analyzer-tool/config.toml
       - Open aiosqlite connection (WAL mode, busy_timeout=5000, synchronous=NORMAL)
       - Store db connection on app.state.db
       - Store config on app.state.config
@@ -634,7 +634,7 @@ def create_app() -> FastAPI:
 External deps: `fastapi`, `aiosqlite`, `uvicorn`
 Internal imports: `config.load_config`, `db.schema.run_migrations`, `collector.routes`
 
-### 4.2 `src/context_pulse/collector/routes.py` -- Route Handlers
+### 4.2 `src/context_analyzer_tool/collector/routes.py` -- Route Handlers
 
 ```python
 """All HTTP route handlers."""
@@ -656,7 +656,7 @@ async def get_sessions(request: Request) -> dict[str, SessionState]:
     return request.app.state.sessions
 
 
-async def get_config(request: Request) -> ContextPulseConfig:
+async def get_config(request: Request) -> CATConfig:
     """Dependency: yields app.state.config."""
     return request.app.state.config
 
@@ -703,7 +703,7 @@ async def get_status(
 ) -> StatusResponse:
     """
     Returns active sessions, last 20 events, last 20 tasks.
-    Used by `context-pulse status` CLI command.
+    Used by `context-analyzer-tool status` CLI command.
     """
     ...
 
@@ -755,7 +755,7 @@ async def get_session_snapshots(
 External deps: `fastapi`
 Internal imports: `collector.models`, `collector.delta_engine`, `db.events`, `db.tasks`, `config`
 
-### 4.3 `src/context_pulse/collector/delta_engine.py` -- Token Delta Engine
+### 4.3 `src/context_analyzer_tool/collector/delta_engine.py` -- Token Delta Engine
 
 ```python
 """In-memory correlation engine pairing tool calls with token snapshots."""
@@ -766,7 +766,7 @@ from typing import Optional
 import logging
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.delta_engine")
+logger = logging.getLogger("context_analyzer_tool.delta_engine")
 
 
 @dataclass
@@ -868,7 +868,7 @@ async def restore_sessions_from_db(
 External deps: `aiosqlite`
 Internal imports: `collector.models`, `db.tasks`
 
-### 4.4 `src/context_pulse/db/schema.py` -- Schema and Migrations
+### 4.4 `src/context_analyzer_tool/db/schema.py` -- Schema and Migrations
 
 ```python
 """Database schema creation and migration management."""
@@ -876,7 +876,7 @@ Internal imports: `collector.models`, `db.tasks`
 import aiosqlite
 import logging
 
-logger = logging.getLogger("context_pulse.db.schema")
+logger = logging.getLogger("context_analyzer_tool.db.schema")
 
 MIGRATIONS: list[tuple[int, str]] = [
     (1, "initial schema"),
@@ -914,7 +914,7 @@ async def get_schema_version(db: aiosqlite.Connection) -> int:
 External deps: `aiosqlite`
 Internal imports: none
 
-### 4.5 `src/context_pulse/db/events.py` -- Event CRUD
+### 4.5 `src/context_analyzer_tool/db/events.py` -- Event CRUD
 
 ```python
 """CRUD operations for the events and token_snapshots tables."""
@@ -1022,7 +1022,7 @@ async def get_snapshot_count(db: aiosqlite.Connection) -> int:
 External deps: `aiosqlite`
 Internal imports: none
 
-### 4.6 `src/context_pulse/db/tasks.py` -- Task CRUD + Delta Operations
+### 4.6 `src/context_analyzer_tool/db/tasks.py` -- Task CRUD + Delta Operations
 
 ```python
 """CRUD operations for the tasks table."""
@@ -1105,7 +1105,7 @@ async def get_null_delta_tasks(
 External deps: `aiosqlite`
 Internal imports: none
 
-### 4.7 `src/context_pulse/config.py` -- Configuration
+### 4.7 `src/context_analyzer_tool/config.py` -- Configuration
 
 ```python
 """TOML configuration loader."""
@@ -1115,20 +1115,20 @@ from pathlib import Path
 from typing import Optional
 import logging
 
-logger = logging.getLogger("context_pulse.config")
+logger = logging.getLogger("context_analyzer_tool.config")
 
-DEFAULT_CONFIG_DIR = Path.home() / ".context-pulse"
+DEFAULT_CONFIG_DIR = Path.home() / ".context-analyzer-tool"
 DEFAULT_CONFIG_PATH = DEFAULT_CONFIG_DIR / "config.toml"
 
 
-def load_config(config_path: Optional[Path] = None) -> ContextPulseConfig:
+def load_config(config_path: Optional[Path] = None) -> CATConfig:
     """
     Load config from TOML file.
     1. If config_path is None, use DEFAULT_CONFIG_PATH.
-    2. If file does not exist, return ContextPulseConfig() (all defaults).
+    2. If file does not exist, return CATConfig() (all defaults).
     3. Parse TOML, validate with Pydantic.
     4. Expand ~ in db_path.
-    Returns ContextPulseConfig.
+    Returns CATConfig.
     Raises ValueError if TOML is malformed.
     """
     ...
@@ -1136,13 +1136,13 @@ def load_config(config_path: Optional[Path] = None) -> ContextPulseConfig:
 
 def ensure_config_dir() -> Path:
     """
-    Create ~/.context-pulse/ if it doesn't exist.
+    Create ~/.context-analyzer-tool/ if it doesn't exist.
     Returns the directory path.
     """
     ...
 
 
-def get_db_path(config: ContextPulseConfig) -> str:
+def get_db_path(config: CATConfig) -> str:
     """
     Resolve db_path from config, expanding ~.
     Returns absolute path string.
@@ -1159,7 +1159,7 @@ def write_default_config(path: Optional[Path] = None) -> Path:
 ```
 
 External deps: `tomllib` (stdlib 3.11+), `pydantic`
-Internal imports: `collector.models.ContextPulseConfig` (or defined here)
+Internal imports: `collector.models.CATConfig` (or defined here)
 
 ---
 
@@ -1176,7 +1176,7 @@ All hook scripts are standalone Python files using PEP 723 inline script metadat
 # ///
 
 """
-context-pulse hook: {HookName}
+context-analyzer-tool hook: {HookName}
 Reads hook payload from stdin, POSTs to collector, exits 0.
 """
 
@@ -1282,7 +1282,7 @@ This script serves a **dual purpose**: it both POSTs snapshot data to the collec
 # ///
 
 """
-context-pulse statusline script.
+context-analyzer-tool statusline script.
 1. Reads statusline JSON from stdin (provided by Claude Code).
 2. POSTs token snapshot to collector (fire-and-forget, 2s timeout).
 3. Prints a formatted statusline string to stdout.
@@ -1370,7 +1370,7 @@ def main() -> None:
         print(format_statusline(data))
     except Exception:
         # On any error, output a safe default
-        print("context-pulse | --")
+        print("context-analyzer-tool | --")
 
     sys.exit(0)
 
@@ -1392,7 +1392,7 @@ if __name__ == "__main__":
 
 ### 5.8 Installation Configuration in settings.json
 
-The `context-pulse install` command writes to `~/.claude/settings.json`:
+The `context-analyzer-tool install` command writes to `~/.claude/settings.json`:
 
 ```json
 {
@@ -1403,7 +1403,7 @@ The `context-pulse install` command writes to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.context-pulse/hooks/post_tool_use.py",
+            "command": "uv run ~/.context-analyzer-tool/hooks/post_tool_use.py",
             "timeout": 5
           }
         ]
@@ -1415,7 +1415,7 @@ The `context-pulse install` command writes to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.context-pulse/hooks/subagent_stop.py",
+            "command": "uv run ~/.context-analyzer-tool/hooks/subagent_stop.py",
             "timeout": 5
           }
         ]
@@ -1427,7 +1427,7 @@ The `context-pulse install` command writes to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.context-pulse/hooks/stop.py",
+            "command": "uv run ~/.context-analyzer-tool/hooks/stop.py",
             "timeout": 5
           }
         ]
@@ -1439,7 +1439,7 @@ The `context-pulse install` command writes to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ~/.context-pulse/hooks/user_prompt_submit.py",
+            "command": "uv run ~/.context-analyzer-tool/hooks/user_prompt_submit.py",
             "timeout": 5
           }
         ]
@@ -1448,12 +1448,12 @@ The `context-pulse install` command writes to `~/.claude/settings.json`:
   },
   "statusLine": {
     "type": "command",
-    "command": "uv run ~/.context-pulse/hooks/statusline.py"
+    "command": "uv run ~/.context-analyzer-tool/hooks/statusline.py"
   }
 }
 ```
 
-Note: The install command must **merge** with existing settings, not overwrite. It reads the existing file, adds/updates only the context-pulse entries, and writes back with proper JSON formatting.
+Note: The install command must **merge** with existing settings, not overwrite. It reads the existing file, adds/updates only the context-analyzer-tool entries, and writes back with proper JSON formatting.
 
 ---
 
@@ -1461,17 +1461,17 @@ Note: The install command must **merge** with existing settings, not overwrite. 
 
 CLI is built with `typer`. Since Typer does not support async, all async operations are wrapped with `asyncio.run()`.
 
-### 6.1 `context-pulse serve`
+### 6.1 `context-analyzer-tool serve`
 
 ```
-Usage: context-pulse serve [OPTIONS]
+Usage: context-analyzer-tool serve [OPTIONS]
 
 Start the collector server.
 
 Options:
   --host TEXT     Bind host [default: 127.0.0.1]
   --port INTEGER  Bind port [default: 7821]
-  --config PATH   Config file path [default: ~/.context-pulse/config.toml]
+  --config PATH   Config file path [default: ~/.context-analyzer-tool/config.toml]
   --log-level TEXT  Log level [default: info]
 ```
 
@@ -1491,9 +1491,9 @@ def serve(
     config: Optional[Path] = typer.Option(None, help="Config file path"),
     log_level: str = typer.Option("info", help="Log level"),
 ) -> None:
-    """Start the context-pulse collector server."""
+    """Start the context-analyzer-tool collector server."""
     import uvicorn
-    from context_pulse.collector.server import create_app
+    from context_analyzer_tool.collector.server import create_app
 
     cfg = load_config(config)
     actual_host = host or cfg.collector.host
@@ -1507,10 +1507,10 @@ def serve(
     )
 ```
 
-### 6.2 `context-pulse status`
+### 6.2 `context-analyzer-tool status`
 
 ```
-Usage: context-pulse status [OPTIONS]
+Usage: context-analyzer-tool status [OPTIONS]
 
 Show recent events and active sessions.
 
@@ -1523,7 +1523,7 @@ Options:
 
 **What it does:**
 1. GET `{url}/api/status` from the running collector.
-2. If collector is unreachable, print error and suggest `context-pulse serve`.
+2. If collector is unreachable, print error and suggest `context-analyzer-tool serve`.
 3. Render a Rich table with columns: `Time | Session | Type | Tool | Delta | Compaction`.
 4. Above the table, show active session summary: session_id (truncated to 8 chars), event count, latest ctx%, model.
 
@@ -1572,7 +1572,7 @@ async def _status_async(
     except httpx.ConnectError:
         console.print(
             "[red]Cannot connect to collector.[/red] "
-            "Is it running? Start with: [bold]context-pulse serve[/bold]"
+            "Is it running? Start with: [bold]context-analyzer-tool serve[/bold]"
         )
         raise typer.Exit(1)
 
@@ -1587,41 +1587,41 @@ async def _status_async(
     ...
 ```
 
-### 6.3 `context-pulse install`
+### 6.3 `context-analyzer-tool install`
 
 ```
-Usage: context-pulse install [OPTIONS]
+Usage: context-analyzer-tool install [OPTIONS]
 
 Install hooks and statusline into Claude Code settings.
 
 Options:
   --claude-settings PATH   Path to settings.json [default: ~/.claude/settings.json]
-  --hooks-dir PATH         Where to copy hook scripts [default: ~/.context-pulse/hooks/]
-  --uninstall              Remove context-pulse hooks and statusline
+  --hooks-dir PATH         Where to copy hook scripts [default: ~/.context-analyzer-tool/hooks/]
+  --uninstall              Remove context-analyzer-tool hooks and statusline
   --check                  Verify installation without modifying anything
   --use-http               Use HTTP hooks instead of command hooks (posts directly to collector)
 ```
 
 **What it does (install):**
-1. Create `~/.context-pulse/` and `~/.context-pulse/hooks/` directories.
-2. Copy hook scripts from the package to `~/.context-pulse/hooks/`.
+1. Create `~/.context-analyzer-tool/` and `~/.context-analyzer-tool/hooks/` directories.
+2. Copy hook scripts from the package to `~/.context-analyzer-tool/hooks/`.
 3. Write default `config.toml` if it doesn't exist.
 4. Read existing `~/.claude/settings.json` (or create if missing).
-5. Merge hook entries and statusline entry (preserve existing non-context-pulse hooks).
+5. Merge hook entries and statusline entry (preserve existing non-context-analyzer-tool hooks).
 6. Write back settings.json.
 7. Verify collector is reachable (GET /health). If not, warn user.
 8. Print summary of what was installed.
 
 **What it does (--check):**
 1. Check if hooks directory exists and contains expected scripts.
-2. Check if settings.json has context-pulse hooks registered.
+2. Check if settings.json has context-analyzer-tool hooks registered.
 3. Check if collector is reachable.
 4. Print pass/fail for each check.
 
 **What it does (--uninstall):**
-1. Remove context-pulse hook entries from settings.json.
-2. Remove statusline entry from settings.json (only if it points to context-pulse).
-3. Optionally remove ~/.context-pulse/ directory (prompt user).
+1. Remove context-analyzer-tool hook entries from settings.json.
+2. Remove statusline entry from settings.json (only if it points to context-analyzer-tool).
+3. Optionally remove ~/.context-analyzer-tool/ directory (prompt user).
 
 **What it does (--use-http):**
 Instead of `"type": "command"` hooks, install `"type": "http"` hooks that POST directly to the collector. This avoids spawning a Python process per hook but requires the collector to be running at hook time.
@@ -1742,8 +1742,8 @@ These groups can be built in parallel:
 ### 8.1 Full TOML with Defaults and Comments
 
 ```toml
-# ~/.context-pulse/config.toml
-# context-pulse configuration
+# ~/.context-analyzer-tool/config.toml
+# context-analyzer-tool configuration
 
 [collector]
 # Host to bind the collector server
@@ -1751,7 +1751,7 @@ host = "127.0.0.1"
 # Port for the collector HTTP server
 port = 7821
 # Path to SQLite database (~ is expanded)
-db_path = "~/.context-pulse/context_pulse.db"
+db_path = "~/.context-analyzer-tool/context_analyzer_tool.db"
 
 [anomaly]
 # Z-score threshold for anomaly detection (Phase 2)
@@ -1776,7 +1776,7 @@ max_tokens = 150
 cache_results = true
 
 [notifications]
-# Show context-pulse data in Claude Code statusline
+# Show context-analyzer-tool data in Claude Code statusline
 statusline = true
 # Fire OS-level notifications on anomalies
 system_notification = true
@@ -1799,23 +1799,23 @@ See Section 1.6 above. The model maps exactly: each TOML section is a nested Bas
 ### 8.3 Config Loading Priority
 
 1. Built-in defaults (Pydantic model defaults).
-2. Config file (`~/.context-pulse/config.toml`).
-3. Environment variables: `CONTEXT_PULSE_COLLECTOR_PORT=7822` overrides `collector.port`. Pattern: `CONTEXT_PULSE_{SECTION}_{KEY}` (uppercase).
+2. Config file (`~/.context-analyzer-tool/config.toml`).
+3. Environment variables: `CAT_COLLECTOR_PORT=7822` overrides `collector.port`. Pattern: `CAT_{SECTION}_{KEY}` (uppercase).
 4. CLI flags (highest priority, only for `serve` command).
 
-Environment variable support is implemented with a custom `model_validator` on `ContextPulseConfig` that checks `os.environ` for matching keys after TOML loading.
+Environment variable support is implemented with a custom `model_validator` on `CATConfig` that checks `os.environ` for matching keys after TOML loading.
 
 ---
 
 ## 9. File-by-File Breakdown
 
-### 9.1 `src/context_pulse/__init__.py`
+### 9.1 `src/context_analyzer_tool/__init__.py`
 
 - **Contains:** Package version string `__version__ = "0.1.0"`.
 - **Internal imports:** None.
 - **External deps:** None.
 
-### 9.2 `src/context_pulse/cli.py`
+### 9.2 `src/context_analyzer_tool/cli.py`
 
 - **Contains:**
   - `app = typer.Typer()` -- the root CLI app.
@@ -1823,30 +1823,30 @@ Environment variable support is implemented with a custom `model_validator` on `
   - `status()` -- fetches and displays recent events from the collector API.
   - `_status_async()` -- async implementation of status.
   - `install()` -- installs hooks into Claude Code settings.
-  - `_merge_settings()` -- merges context-pulse hooks into existing settings.json.
-  - `_copy_hook_scripts()` -- copies hook .py files to ~/.context-pulse/hooks/.
+  - `_merge_settings()` -- merges context-analyzer-tool hooks into existing settings.json.
+  - `_copy_hook_scripts()` -- copies hook .py files to ~/.context-analyzer-tool/hooks/.
   - `_verify_installation()` -- checks that hooks are installed and collector is reachable.
 - **Internal imports:** `config.load_config`, `config.ensure_config_dir`, `config.write_default_config`, `collector.server.create_app`.
 - **External deps:** `typer`, `rich` (Console, Table, Panel), `httpx`, `uvicorn`, `asyncio`, `json`, `pathlib`, `shutil`.
 
-### 9.3 `src/context_pulse/config.py`
+### 9.3 `src/context_analyzer_tool/config.py`
 
 - **Contains:**
-  - All Pydantic config models (see Section 1.6): `CollectorConfig`, `AnomalyConfig`, `ClassifierConfig`, `NotificationsConfig`, `DashboardConfig`, `ContextPulseConfig`.
-  - `load_config(config_path: Optional[Path] = None) -> ContextPulseConfig`
+  - All Pydantic config models (see Section 1.6): `CollectorConfig`, `AnomalyConfig`, `ClassifierConfig`, `NotificationsConfig`, `DashboardConfig`, `CATConfig`.
+  - `load_config(config_path: Optional[Path] = None) -> CATConfig`
   - `ensure_config_dir() -> Path`
-  - `get_db_path(config: ContextPulseConfig) -> str`
+  - `get_db_path(config: CATConfig) -> str`
   - `write_default_config(path: Optional[Path] = None) -> Path`
 - **Internal imports:** None.
 - **External deps:** `pydantic` (BaseModel, Field), `tomllib` (stdlib), `pathlib`, `os`, `logging`.
 
-### 9.4 `src/context_pulse/collector/__init__.py`
+### 9.4 `src/context_analyzer_tool/collector/__init__.py`
 
 - **Contains:** Empty or re-exports.
 - **Internal imports:** None.
 - **External deps:** None.
 
-### 9.5 `src/context_pulse/collector/models.py`
+### 9.5 `src/context_analyzer_tool/collector/models.py`
 
 - **Contains:** All Pydantic models from Sections 1.1 through 1.5:
   - `PostToolUsePayload`, `SubagentStopPayload`, `StopPayload`, `UserPromptSubmitPayload`
@@ -1857,7 +1857,7 @@ Environment variable support is implemented with a custom `model_validator` on `
 - **Internal imports:** None.
 - **External deps:** `pydantic` (BaseModel, Field, field_validator), `typing` (Any, Optional), `time`.
 
-### 9.6 `src/context_pulse/collector/server.py`
+### 9.6 `src/context_analyzer_tool/collector/server.py`
 
 - **Contains:**
   - `lifespan(app: FastAPI) -> AsyncGenerator[None, None]` -- async context manager.
@@ -1865,7 +1865,7 @@ Environment variable support is implemented with a custom `model_validator` on `
 - **Internal imports:** `config.load_config`, `config.get_db_path`, `db.schema.open_db`, `db.schema.run_migrations`, `collector.routes.hook_router`, `collector.routes.api_router`, `collector.delta_engine.restore_sessions_from_db`.
 - **External deps:** `fastapi` (FastAPI), `contextlib` (asynccontextmanager), `typing` (AsyncGenerator), `time`, `logging`.
 
-### 9.7 `src/context_pulse/collector/routes.py`
+### 9.7 `src/context_analyzer_tool/collector/routes.py`
 
 - **Contains:**
   - `hook_router = APIRouter()`, `api_router = APIRouter()`
@@ -1874,7 +1874,7 @@ Environment variable support is implemented with a custom `model_validator` on `
 - **Internal imports:** `collector.models` (all request/response models), `collector.delta_engine` (on_tool_use, on_snapshot, on_session_stop), `db.events` (insert_event, insert_snapshot, get_recent_events, get_event_count, get_snapshot_count, get_latest_snapshot, get_active_session_ids), `db.tasks` (insert_task, get_recent_tasks).
 - **External deps:** `fastapi` (APIRouter, Depends, Request), `aiosqlite` (Connection type), `logging`, `json`, `time`.
 
-### 9.8 `src/context_pulse/collector/delta_engine.py`
+### 9.8 `src/context_analyzer_tool/collector/delta_engine.py`
 
 - **Contains:**
   - `PendingToolCall` dataclass.
@@ -1883,13 +1883,13 @@ Environment variable support is implemented with a custom `model_validator` on `
 - **Internal imports:** `db.tasks` (insert_task, update_task_delta), `db.events` (get_latest_snapshot, get_active_session_ids).
 - **External deps:** `aiosqlite`, `dataclasses`, `collections` (deque), `typing`, `logging`, `time`.
 
-### 9.9 `src/context_pulse/db/__init__.py`
+### 9.9 `src/context_analyzer_tool/db/__init__.py`
 
 - **Contains:** Empty or re-exports.
 - **Internal imports:** None.
 - **External deps:** None.
 
-### 9.10 `src/context_pulse/db/schema.py`
+### 9.10 `src/context_analyzer_tool/db/schema.py`
 
 - **Contains:**
   - `MIGRATIONS` list.
@@ -1900,14 +1900,14 @@ Environment variable support is implemented with a custom `model_validator` on `
 - **Internal imports:** None.
 - **External deps:** `aiosqlite`, `logging`.
 
-### 9.11 `src/context_pulse/db/events.py`
+### 9.11 `src/context_analyzer_tool/db/events.py`
 
 - **Contains:**
   - `insert_event()`, `insert_snapshot()`, `get_recent_events()`, `get_latest_snapshot()`, `get_recent_snapshots()`, `get_active_session_ids()`, `get_event_count()`, `get_snapshot_count()`.
 - **Internal imports:** None.
 - **External deps:** `aiosqlite`, `typing`, `json`.
 
-### 9.12 `src/context_pulse/db/tasks.py`
+### 9.12 `src/context_analyzer_tool/db/tasks.py`
 
 - **Contains:**
   - `insert_task()`, `update_task_delta()`, `get_recent_tasks()`, `get_tasks_by_type()`, `get_null_delta_tasks()`.
@@ -2010,7 +2010,7 @@ Environment variable support is implemented with a custom `model_validator` on `
 
 ```toml
 [project]
-name = "context-pulse"
+name = "context-analyzer-tool"
 version = "0.1.0"
 description = "Per-task token attribution and anomaly detection for Claude Code"
 requires-python = ">=3.11"
@@ -2025,7 +2025,7 @@ dependencies = [
 ]
 
 [project.scripts]
-context-pulse = "context_pulse.cli:app"
+context-analyzer-tool = "context_analyzer_tool.cli:app"
 
 [dependency-groups]
 dev = [
@@ -2059,7 +2059,7 @@ testpaths = ["tests"]
 
 | # | Edge Case | Severity | Handling |
 |---|---|---|---|
-| E1 | **Collector not running when hook fires** | Medium | Hook scripts catch `httpx.ConnectError`, log nothing, exit 0. Events are silently lost. Mitigation: `context-pulse install --check` warns if collector is down. Future: hook scripts can write to a local spool file (`~/.context-pulse/spool/`) and the collector drains it on startup. Phase 1 does NOT implement spooling. |
+| E1 | **Collector not running when hook fires** | Medium | Hook scripts catch `httpx.ConnectError`, log nothing, exit 0. Events are silently lost. Mitigation: `context-analyzer-tool install --check` warns if collector is down. Future: hook scripts can write to a local spool file (`~/.context-analyzer-tool/spool/`) and the collector drains it on startup. Phase 1 does NOT implement spooling. |
 | E2 | **Statusline script fails to POST** | Medium | Same as E1. The statusline still outputs to stdout (Claude Code sees a status). Only the snapshot is lost. Token deltas for tool calls between the lost snapshot and the next one will be aggregated into a single larger delta. |
 | E3 | **Hook script exceeds timeout (5s)** | Low | Claude Code kills the process. `httpx` timeout is 2s, so this should not happen unless `uv run` is slow on first invocation (dependency resolution). Mitigation: run `uv run hooks/post_tool_use.py < /dev/null` once during install to pre-cache deps. |
 | E4 | **Multiple Claude Code instances race on settings.json** | Low | The install command uses a file lock (portalocker or fcntl) when writing settings.json. If locking is not available, it reads-modifies-writes with a retry on conflict. |
@@ -2084,7 +2084,7 @@ testpaths = ["tests"]
 | E13 | **uv not installed** | High | The install command checks for `uv` in PATH. If missing, prints instructions: `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`. Hooks will not work without `uv`. |
 | E14 | **Python < 3.11** | Medium | `pyproject.toml` declares `requires-python = ">=3.11"`. `uv` enforces this. Hook scripts declare `requires-python = ">=3.11"` via PEP 723. |
 | E15 | **Disk full (SQLite write fails)** | Low | All DB writes are wrapped in try/except. On write failure, the route returns 202 anyway (hook must not fail), logs an error. A persistent disk-full state is surfaced via `GET /health` which tries a test write. |
-| E16 | **Port 7821 already in use** | Medium | `uvicorn.run()` raises `OSError`. The `serve` command catches this and prints a clear message: "Port 7821 is in use. Is another context-pulse instance running? Use --port to specify a different port." |
+| E16 | **Port 7821 already in use** | Medium | `uvicorn.run()` raises `OSError`. The `serve` command catches this and prints a clear message: "Port 7821 is in use. Is another context-analyzer-tool instance running? Use --port to specify a different port." |
 
 ### 10.4 Data Integrity Risks
 
@@ -2100,22 +2100,22 @@ testpaths = ["tests"]
 
 | # | Edge Case | Severity | Handling |
 |---|---|---|---|
-| E22 | **Database grows unbounded** | Medium | Phase 1 does not implement cleanup. Estimated growth: ~5MB/month of heavy use. A future `context-pulse gc` command will delete events older than a configurable retention period (default 30 days). For Phase 1, document that users can delete the DB file to reset. |
+| E22 | **Database grows unbounded** | Medium | Phase 1 does not implement cleanup. Estimated growth: ~5MB/month of heavy use. A future `context-analyzer-tool gc` command will delete events older than a configurable retention period (default 30 days). For Phase 1, document that users can delete the DB file to reset. |
 | E23 | **Memory leak from sessions dict** | Low | `cleanup_stale_sessions()` runs every 60s and evicts sessions idle for >1 hour. Each SessionState is ~200 bytes. Even 1000 sessions would be 200KB. Not a concern. |
-| E24 | **First-run uv dependency resolution slow** | Medium | First `uv run` of a hook script downloads `httpx` and its deps. This can take 2-5s, potentially exceeding Claude Code's 5s hook timeout. Mitigation: `context-pulse install` runs each hook script once with empty stdin to pre-warm the `uv` cache. |
-| E25 | **User has existing hooks in settings.json** | Medium | The install command merges, not overwrites. It reads the existing hooks arrays and appends context-pulse entries. If a context-pulse entry already exists (detected by checking if the command contains "context-pulse"), it is updated in place. |
+| E24 | **First-run uv dependency resolution slow** | Medium | First `uv run` of a hook script downloads `httpx` and its deps. This can take 2-5s, potentially exceeding Claude Code's 5s hook timeout. Mitigation: `context-analyzer-tool install` runs each hook script once with empty stdin to pre-warm the `uv` cache. |
+| E25 | **User has existing hooks in settings.json** | Medium | The install command merges, not overwrites. It reads the existing hooks arrays and appends context-analyzer-tool entries. If a context-analyzer-tool entry already exists (detected by checking if the command contains "context-analyzer-tool"), it is updated in place. |
 
 ---
 
 ## Appendix A: Project File Structure (Phase 1)
 
 ```
-context-pulse/
+context-analyzer-tool/
 ├── pyproject.toml
 ├── CLAUDE.md
 ├── .gitattributes
 ├── src/
-│   └── context_pulse/
+│   └── context_analyzer_tool/
 │       ├── __init__.py
 │       ├── cli.py
 │       ├── config.py
@@ -2147,11 +2147,11 @@ context-pulse/
 ```
 
 Files NOT included in Phase 1 (deferred):
-- `src/context_pulse/db/baselines.py` -- Phase 2
-- `src/context_pulse/db/anomalies.py` -- Phase 2
-- `src/context_pulse/engine/` -- Phase 2
-- `src/context_pulse/notify/` -- Phase 3
-- `src/context_pulse/dashboard/` -- Phase 4/5
+- `src/context_analyzer_tool/db/baselines.py` -- Phase 2
+- `src/context_analyzer_tool/db/anomalies.py` -- Phase 2
+- `src/context_analyzer_tool/engine/` -- Phase 2
+- `src/context_analyzer_tool/notify/` -- Phase 3
+- `src/context_analyzer_tool/dashboard/` -- Phase 4/5
 
 ---
 

@@ -27,7 +27,7 @@ What actually happened.
 
 - OS: 
 - Python version: 
-- context-pulse version: 
+- context-analyzer-tool version: 
 - Claude Code version: 
 
 ## Logs / Error Output

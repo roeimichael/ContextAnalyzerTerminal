@@ -1,4 +1,4 @@
-"""Z-score anomaly detector for context-pulse (Phase 2).
+"""Z-score anomaly detector for context-analyzer-tool (Phase 2).
 
 Evaluates token deltas against a rolling baseline and flags statistical
 outliers.  Classification of root cause is delegated to the classifier
@@ -11,13 +11,13 @@ import logging
 
 import aiosqlite
 
-from context_pulse.collector.models import AnomalyResult
-from context_pulse.config import AnomalyConfig, ClassifierConfig
-from context_pulse.db import anomalies as db_anomalies
-from context_pulse.engine.baseline import BaselineManager
-from context_pulse.engine.classifier import classify_anomaly
+from context_analyzer_tool.collector.models import AnomalyResult
+from context_analyzer_tool.config import AnomalyConfig, ClassifierConfig
+from context_analyzer_tool.db import anomalies as db_anomalies
+from context_analyzer_tool.engine.baseline import BaselineManager
+from context_analyzer_tool.engine.classifier import classify_anomaly
 
-logger = logging.getLogger("context_pulse.engine.anomaly")
+logger = logging.getLogger("context_analyzer_tool.engine.anomaly")
 
 MIN_STDDEV: float = 100.0
 
@@ -286,7 +286,7 @@ async def _detect_anomaly_inner(
             # Enhance Bash anomalies with RTK recommendation
             if task_type == "Bash":
                 try:
-                    from context_pulse.rtk_integration import (
+                    from context_analyzer_tool.rtk_integration import (
                         enhance_suggestion_with_rtk,
                     )
 

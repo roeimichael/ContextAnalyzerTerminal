@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-logger = logging.getLogger("context_pulse.engine.context_breakdown")
+logger = logging.getLogger("context_analyzer_tool.engine.context_breakdown")
 
 # Fixed baseline costs for a fresh Claude Code session (in tokens).
 # These are constant regardless of conversation length.

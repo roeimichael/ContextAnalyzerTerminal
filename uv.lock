@@ -92,7 +92,7 @@ wheels = [
 ]
 
 [[package]]
-name = "context-pulse"
+name = "context-analyzer-tool"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [

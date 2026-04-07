@@ -4,7 +4,7 @@
 # ///
 
 """
-context-pulse hook: SubagentStop
+context-analyzer-tool hook: SubagentStop
 Reads hook payload from stdin, POSTs to collector, exits 0.
 """
 

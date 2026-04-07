@@ -10,8 +10,8 @@ from __future__ import annotations
 import aiosqlite
 import pytest
 
-from context_pulse.db import messages as db_messages
-from context_pulse.notify.context_warnings import check_context_thresholds
+from context_analyzer_tool.db import messages as db_messages
+from context_analyzer_tool.notify.context_warnings import check_context_thresholds
 
 SESSION_ID = "test-session-warnings"
 CONTEXT_WINDOW = 200_000
@@ -33,7 +33,7 @@ async def _get_queued_messages(db: aiosqlite.Connection) -> list[str]:
 
 
 class TestContextWarnings:
-    """Tests for context_pulse.notify.context_warnings."""
+    """Tests for context_analyzer_tool.notify.context_warnings."""
 
     @pytest.mark.asyncio
     async def test_60_percent_message_suggests_compact(

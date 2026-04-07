@@ -1,6 +1,6 @@
 """Tests for the burn rate projection engine."""
 
-from context_pulse.engine.burn_rate import compute_burn_rate
+from context_analyzer_tool.engine.burn_rate import compute_burn_rate
 
 
 def test_linear_growth_projection() -> None:

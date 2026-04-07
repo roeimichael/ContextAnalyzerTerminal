@@ -1,4 +1,4 @@
-"""FastAPI application factory for the context-pulse collector."""
+"""FastAPI application factory for the context-analyzer-tool collector."""
 
 from __future__ import annotations
 
@@ -10,12 +10,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from context_pulse.collector.delta_engine import SessionState, restore_sessions_from_db
-from context_pulse.collector.routes import api_router, hook_router
-from context_pulse.config import ensure_config_dir, get_db_path, load_config
-from context_pulse.db.maintenance import prune_old_data
-from context_pulse.db.schema import open_db, run_migrations
-from context_pulse.engine.baseline import BaselineManager
+from context_analyzer_tool.collector.delta_engine import SessionState, restore_sessions_from_db
+from context_analyzer_tool.collector.routes import api_router, hook_router
+from context_analyzer_tool.config import ensure_config_dir, get_db_path, load_config
+from context_analyzer_tool.db.maintenance import prune_old_data
+from context_analyzer_tool.db.schema import open_db, run_migrations
+from context_analyzer_tool.engine.baseline import BaselineManager
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.start_time = time.time()
 
     logger.info(
-        "context-pulse collector started on %s:%d",
+        "context-analyzer-tool collector started on %s:%d",
         cfg.collector.host,
         cfg.collector.port,
     )
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # -- shutdown --------------------------------------------------------
-    logger.info("Shutting down context-pulse collector")
+    logger.info("Shutting down context-analyzer-tool collector")
     await baseline_manager.flush_all()
     logger.info("Baselines flushed to database")
     await db.close()
@@ -92,7 +92,7 @@ def create_app() -> FastAPI:
         A fully configured :class:`FastAPI` instance with hook and API
         routers included.
     """
-    app = FastAPI(lifespan=lifespan, title="context-pulse")
+    app = FastAPI(lifespan=lifespan, title="context-analyzer-tool")
     app.include_router(hook_router, prefix="/hook")
     app.include_router(api_router, prefix="/api")
     return app

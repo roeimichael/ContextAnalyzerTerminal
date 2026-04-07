@@ -11,11 +11,11 @@ from typing import Any
 
 import aiosqlite
 
-from context_pulse.collector.models import HookEventRequest, StatuslineSnapshotRequest
-from context_pulse.db import events as db_events
-from context_pulse.db import tasks as db_tasks
+from context_analyzer_tool.collector.models import HookEventRequest, StatuslineSnapshotRequest
+from context_analyzer_tool.db import events as db_events
+from context_analyzer_tool.db import tasks as db_tasks
 
-logger = logging.getLogger("context_pulse.delta_engine")
+logger = logging.getLogger("context_analyzer_tool.delta_engine")
 
 
 @dataclass
@@ -256,7 +256,7 @@ async def on_snapshot(
 
     if cache_miss_detected:
         try:
-            from context_pulse.db import messages as db_messages
+            from context_analyzer_tool.db import messages as db_messages
 
             dedup_key = "CACHE_MISS_WARNING"
             already_sent = await db_messages.has_message_like(
@@ -265,7 +265,7 @@ async def on_snapshot(
             if not already_sent:
                 msg = (
                     f"<!-- {dedup_key} -->\n"
-                    f"[context-pulse] Cache expired -- context was rebuilt "
+                    f"[CAT] Cache expired -- context was rebuilt "
                     f"(~{curr_cache_creation:,} cache_creation tokens). "
                     "This is normal after ~5 minutes of inactivity. "
                     "Frequent cache rebuilds increase token costs."
@@ -466,10 +466,10 @@ async def process_anomalies(
 
     Returns a list of ``AnomalyResult`` objects (may be empty).
     """
-    from context_pulse.collector.models import AnomalyResult
-    from context_pulse.config import AnomalyConfig, ClassifierConfig, NotificationsConfig
-    from context_pulse.engine.anomaly import detect_anomaly
-    from context_pulse.engine.baseline import BaselineManager
+    from context_analyzer_tool.collector.models import AnomalyResult
+    from context_analyzer_tool.config import AnomalyConfig, ClassifierConfig, NotificationsConfig
+    from context_analyzer_tool.engine.anomaly import detect_anomaly
+    from context_analyzer_tool.engine.baseline import BaselineManager
 
     if not isinstance(baseline_manager, BaselineManager):
         return []
@@ -512,7 +512,7 @@ async def process_anomalies(
             # Dispatch notifications for this anomaly
             if isinstance(notifications_config, NotificationsConfig):
                 try:
-                    from context_pulse.notify.dispatcher import (
+                    from context_analyzer_tool.notify.dispatcher import (
                         dispatch_anomaly_notifications,
                     )
 
@@ -520,7 +520,7 @@ async def process_anomalies(
                     cause: str | None = None
                     severity: str | None = None
                     suggestion: str | None = None
-                    from context_pulse.db import anomalies as db_anomalies_mod
+                    from context_analyzer_tool.db import anomalies as db_anomalies_mod
 
                     rows = await db_anomalies_mod.get_recent_anomalies(
                         db, limit=1, session_id=session_id,
