@@ -20,6 +20,10 @@ CAT hooks into your Claude Code sessions and tracks token cost **per tool call**
   <img src="docs/demo-dashboard.svg" alt="CAT Dashboard" width="100%">
 </p>
 
+<p align="center">
+  <img src="docs/demo.gif" alt="CAT Demo" width="100%">
+</p>
+
 ## Install
 
 ```bash
@@ -130,7 +134,9 @@ Hooks + Statusline --> Collector --> Delta Engine --> Anomaly Detection --> Clas
                                     Dashboard
 ```
 
-## Development
+## Contributing
+
+We welcome contributions! Check out our **[Good First Issues](https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue)** for beginner-friendly tasks with clear guidance.
 
 ```bash
 uv sync --all-extras          # Install with dev + classifier deps
@@ -139,7 +145,7 @@ uv run ruff check src tests   # Lint
 uv run pyright                # Type check (strict mode)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and areas where help is welcome.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture overview, reading order, and contribution guidelines.
 
 ## Tech Stack
 

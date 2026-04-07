@@ -53,34 +53,30 @@ class TestContextWarnings:
     async def test_70_percent_message_suggests_compact_proactively(
         self, db_connection: aiosqlite.Connection,
     ) -> None:
-        """At 70% usage the warning should mention /compact and auto-compact."""
+        """At 70% usage only the highest threshold (70%) should fire."""
         await check_context_thresholds(db_connection, SESSION_ID, 72.0, CONTEXT_WINDOW)
 
         messages = await _get_queued_messages(db_connection)
-        # 72% crosses both 60% and 70% thresholds
-        assert len(messages) >= 2
+        # Only the highest applicable threshold fires
+        assert len(messages) == 1
 
-        # Find the 70% message (contains CONTEXT_WARNING_70 dedup key)
-        msg_70 = [m for m in messages if "CONTEXT_WARNING_70" in m]
-        assert len(msg_70) == 1
-        assert "/compact" in msg_70[0]
-        assert "auto-compact" in msg_70[0]
+        assert "CONTEXT_WARNING_70" in messages[0]
+        assert "/compact" in messages[0]
+        assert "auto-compact" in messages[0]
 
     @pytest.mark.asyncio
     async def test_90_percent_message_suggests_clear(
         self, db_connection: aiosqlite.Connection,
     ) -> None:
-        """At 90% usage the warning should suggest /clear."""
+        """At 90% usage only the highest threshold (90%) should fire."""
         await check_context_thresholds(db_connection, SESSION_ID, 92.0, CONTEXT_WINDOW)
 
         messages = await _get_queued_messages(db_connection)
-        # 92% crosses all three thresholds
-        assert len(messages) >= 3
+        # Only the highest applicable threshold fires
+        assert len(messages) == 1
 
-        # Find the 90% message
-        msg_90 = [m for m in messages if "CONTEXT_WARNING_90" in m]
-        assert len(msg_90) == 1
-        assert "/clear" in msg_90[0]
+        assert "CONTEXT_WARNING_90" in messages[0]
+        assert "/clear" in messages[0]
 
     @pytest.mark.asyncio
     async def test_dedup_prevents_double_fire(

@@ -77,7 +77,8 @@ async def check_context_thresholds(
     Each threshold fires only once per session (deduplication via
     message pattern matching in the pending_messages table).
     """
-    for threshold_pct, dedup_key, template in _THRESHOLDS:
+    # Iterate from highest threshold down so we only fire the most relevant one
+    for threshold_pct, dedup_key, template in reversed(_THRESHOLDS):
         if used_percentage < threshold_pct:
             continue
 
@@ -86,9 +87,9 @@ async def check_context_thresholds(
             db, session_id, dedup_key,
         )
         if already_sent:
-            continue
+            break
 
-        # Format and queue the message
+        # Format and queue only the highest applicable threshold
         cost_per_turn = _estimate_cost_per_turn(used_percentage, context_window_size)
         est_remaining = _estimate_remaining(used_percentage)
 
@@ -108,3 +109,4 @@ async def check_context_thresholds(
             threshold_pct,
             used_percentage,
         )
+        break

@@ -238,12 +238,20 @@ async def _apply_v2(db: aiosqlite.Connection) -> None:  # pyright: ignore[report
             created_at   INTEGER NOT NULL
         )"""
     )
-    await db.execute(
-        "ALTER TABLE baselines ADD COLUMN m2 REAL NOT NULL DEFAULT 0.0"
-    )
-    await db.execute(
-        "ALTER TABLE baselines ADD COLUMN window_json TEXT NOT NULL DEFAULT '[]'"
-    )
+    try:
+        await db.execute(
+            "ALTER TABLE baselines ADD COLUMN m2 REAL NOT NULL DEFAULT 0.0"
+        )
+    except Exception as e:
+        if "duplicate column" not in str(e).lower():
+            raise
+    try:
+        await db.execute(
+            "ALTER TABLE baselines ADD COLUMN window_json TEXT NOT NULL DEFAULT '[]'"
+        )
+    except Exception as e:
+        if "duplicate column" not in str(e).lower():
+            raise
 
 
 @_register(3)
@@ -268,9 +276,13 @@ async def _apply_v3(db: aiosqlite.Connection) -> None:  # pyright: ignore[report
 @_register(4)
 async def _apply_v4(db: aiosqlite.Connection) -> None:  # pyright: ignore[reportUnusedFunction]
     """Add estimated token count columns to tasks table."""
-    await db.execute(
-        "ALTER TABLE tasks ADD COLUMN estimated_tokens INTEGER"
-    )
+    try:
+        await db.execute(
+            "ALTER TABLE tasks ADD COLUMN estimated_tokens INTEGER"
+        )
+    except Exception as e:
+        if "duplicate column" not in str(e).lower():
+            raise
 
 
 @_register(5)

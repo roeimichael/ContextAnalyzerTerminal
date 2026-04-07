@@ -39,7 +39,7 @@ class SessionState:
     last_snapshot_total_input: int | None = None
     last_snapshot_timestamp_ms: int | None = None
     pending_tool_calls: deque[PendingToolCall] = field(
-        default_factory=lambda: deque[PendingToolCall]()
+        default_factory=lambda: deque[PendingToolCall](maxlen=100)
     )
     has_initial_snapshot: bool = False
     last_activity_ms: int = 0

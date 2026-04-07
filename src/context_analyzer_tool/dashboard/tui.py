@@ -331,7 +331,7 @@ class DashboardClient:
 
 def _ts_to_time(timestamp_ms: int) -> str:
     """Convert epoch-millisecond timestamp to local ``HH:MM:SS``."""
-    dt = datetime.fromtimestamp(timestamp_ms / 500.0, tz=UTC)
+    dt = datetime.fromtimestamp(timestamp_ms / 1000.0, tz=UTC)
     return dt.strftime("%H:%M:%S")
 
 

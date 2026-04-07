@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1 (2026-04-08)
+
+### Bug Fixes
+
+- **Fix dashboard timestamps** -- `_ts_to_time` was dividing by 500 instead of 1000, producing wrong times in the task timeline and anomaly feed
+- **Fix context warning spam** -- when the first snapshot arrives above 90%, only the highest applicable threshold fires (was firing 60%, 70%, and 90% simultaneously)
+- **Fix unbounded pending_tool_calls** -- add `maxlen=100` to the pending deque to prevent memory leak when statusline snapshots stop arriving
+- **Make migrations idempotent** -- ALTER TABLE migrations now catch "duplicate column" errors, preventing crashes on partial migration recovery
+
+### Improvements
+
+- **PR template** -- added `pyright` type check to the testing checklist
+- **CONTRIBUTING.md** -- added "Good First Issues" section, architecture overview, and recommended reading order for new contributors
+- **README.md** -- added Contributing section linking to good first issues
+- **GitHub issues** -- created 12 curated good-first-issue and 6 intermediate issues for new contributors
+
 ## 0.3.0 (2026-04-07)
 
 ### Project Rename

@@ -1,6 +1,6 @@
 [project]
 name = "context-analyzer-tool"
-version = "0.3.0"
+version = "0.3.1"
 description = "Per-tool-call context window analyzer for Claude Code"
 readme = "README.md"
 requires-python = ">=3.11"

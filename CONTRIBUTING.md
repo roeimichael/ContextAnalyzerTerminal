@@ -1,6 +1,33 @@
-# Contributing to CAT (Context Analyzer Terminal)
+# Contributing to CAT (Context Analyzer Tool)
 
 Thanks for your interest in contributing! CAT is an open-source project and we welcome contributions of all kinds.
+
+## New here? Start with a Good First Issue
+
+We maintain a curated list of beginner-friendly issues — each one includes clear context, the files to look at, and a suggested approach:
+
+**[Browse Good First Issues](https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue)**
+
+These range from one-line bug fixes to small feature additions, and are a great way to get familiar with the codebase and dev workflow before tackling bigger tasks.
+
+## Understanding the Architecture
+
+CAT's data flows in a pipeline:
+
+```
+Claude Code Hooks → FastAPI Collector → Delta Engine → Anomaly Detection → Notifications
+     (hooks/)        (collector/)       (collector/)      (engine/)         (notify/)
+```
+
+**Recommended reading order for new contributors:**
+1. `src/context_analyzer_tool/config.py` — how configuration works
+2. `src/context_analyzer_tool/collector/models.py` — data shapes (Pydantic models)
+3. `src/context_analyzer_tool/collector/delta_engine.py` — core logic: correlating events with token snapshots
+4. `src/context_analyzer_tool/engine/anomaly.py` — how anomalies are detected (Z-score statistics)
+
+For deeper dives, see the architecture docs:
+- [`docs/phase1-architecture.md`](docs/phase1-architecture.md) — Delta engine design and schema
+- [`docs/phase2-architecture.md`](docs/phase2-architecture.md) — Anomaly detection, classifier, and notifications
 
 ## Getting Started
 
