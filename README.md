@@ -65,10 +65,6 @@ That's it. Use Claude Code normally -- CAT tracks everything in the background.
 | **Notifications** | Statusline badges, system alerts, Slack/Discord webhooks |
 | **Multi-session** | Tracks concurrent Claude Code sessions independently |
 
-<p align="center">
-  <img src="docs/demo-cli.svg" alt="CAT CLI Output" width="100%">
-</p>
-
 ## CLI Reference
 
 ```
