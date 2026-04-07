@@ -10,11 +10,16 @@
   <a href="https://github.com/roeimichael/ContextAnalyzerTerminal/actions/workflows/ci.yml"><img src="https://github.com/roeimichael/ContextAnalyzerTerminal/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://github.com/roeimichael/ContextAnalyzerTerminal/releases"><img src="https://img.shields.io/github/v/release/roeimichael/ContextAnalyzerTerminal?color=orange" alt="Latest Release"></a>
+  <a href="https://github.com/roeimichael/ContextAnalyzerTerminal/stargazers"><img src="https://img.shields.io/github/stars/roeimichael/ContextAnalyzerTerminal?style=social" alt="Stars"></a>
+  <a href="https://github.com/roeimichael/ContextAnalyzerTerminal/issues"><img src="https://img.shields.io/github/issues/roeimichael/ContextAnalyzerTerminal" alt="Open Issues"></a>
 </p>
 
 ---
 
-CAT hooks into your Claude Code sessions and tracks token cost **per tool call** -- not just per session. It builds rolling baselines, flags anomalies, and uses an LLM to explain *why* something was expensive.
+Claude Code shows you total token usage -- but not *which* tool call caused the spike. Was it that `Bash` command that ran a find on your entire repo? The `Read` that loaded a 3,000-line file? CAT answers that question in real time.
+
+It hooks silently into your Claude Code sessions, tracks token cost **per tool call**, builds rolling baselines, and fires an alert the moment something anomalous hits -- with a plain-language explanation of *why*.
 
 <p align="center">
   <img src="docs/demo.gif" alt="CAT Demo" width="100%">
@@ -24,33 +29,28 @@ CAT hooks into your Claude Code sessions and tracks token cost **per tool call**
   <img src="docs/demo-dashboard.svg" alt="CAT Dashboard" width="100%">
 </p>
 
-## Install
+## Quick Start
 
 ```bash
 git clone https://github.com/roeimichael/ContextAnalyzerTerminal.git
 cd ContextAnalyzerTerminal
-uv sync
+uv sync                         # install deps (Python 3.11+ and uv required)
+uv sync --extra classifier      # optional: LLM root-cause analysis (~$0.0001/event)
 
-# Optional: enable LLM root-cause classifier (uses Haiku, ~$0.0001/event)
-uv sync --extra classifier
-```
-
-> **Requires:** Python 3.11+ and [uv](https://docs.astral.sh/uv/)
-
-## Setup & Run
-
-```bash
-# Install hooks into Claude Code (also writes default config)
-context-analyzer-tool install
-
-# Start the collector (keep running in a terminal)
-context-analyzer-tool serve
-
-# Open the dashboard
-context-analyzer-tool dashboard
+context-analyzer-tool install   # inject hooks into Claude Code
+context-analyzer-tool serve     # start the collector (keep this running)
+context-analyzer-tool dashboard # open the live TUI
 ```
 
 That's it. Use Claude Code normally -- CAT tracks everything in the background.
+
+## Why CAT?
+
+Claude Code's built-in `/cost` and `/context` commands show snapshots -- no trends, no per-tool attribution, no cache TTL awareness. CAT fills that gap:
+
+- You'll know which tool type consistently burns the most tokens in your workflow
+- You'll get warned *before* your context fills, with actionable suggestions (`/compact`, `/clear`)
+- You'll stop guessing and start optimizing
 
 ## What You Get
 
@@ -123,12 +123,22 @@ Claude Code hooks don't include token counts. CAT correlates two data streams:
 The delta engine matches them by session ID + timestamps to compute per-call costs. Anomalies are detected via Z-score over a rolling 20-sample window per task type, then classified by Haiku.
 
 ```
-Hooks + Statusline --> Collector --> Delta Engine --> Anomaly Detection --> Classifier --> Notifications
-                                        |
-                                    SQLite DB
-                                        |
-                                    Dashboard
+Hooks + Statusline → Collector → Delta Engine → Anomaly Detection → Classifier → Notifications
+                                       │
+                                   SQLite DB
+                                       │
+                                   Dashboard
 ```
+
+## Roadmap
+
+- [ ] Web UI dashboard (browser-based alternative to TUI)
+- [ ] Windows native notifications
+- [ ] Per-file token attribution (which files you Read most)
+- [ ] Export to CSV / JSON for external analysis
+- [ ] pip installable package (`pip install context-analyzer-tool`)
+
+Want to tackle one of these? Open an issue or check [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 
