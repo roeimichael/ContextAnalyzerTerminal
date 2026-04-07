@@ -1,4 +1,4 @@
-"""TOML configuration loader for context-pulse."""
+"""TOML configuration loader for context-analyzer-tool."""
 
 from __future__ import annotations
 
@@ -10,15 +10,15 @@ from typing import Any, get_origin
 
 from pydantic import BaseModel, Field, model_validator
 
-logger = logging.getLogger("context_pulse.config")
+logger = logging.getLogger("context_analyzer_tool.config")
 
 
 def get_config_dir() -> Path:
-    """Return the config directory, respecting ``CONTEXT_PULSE_CONFIG_DIR`` env var."""
-    env_dir = os.environ.get("CONTEXT_PULSE_CONFIG_DIR")
+    """Return the config directory, respecting ``CAT_CONFIG_DIR`` env var."""
+    env_dir = os.environ.get("CAT_CONFIG_DIR")
     if env_dir:
         return Path(env_dir).expanduser()
-    return Path.home() / ".context-pulse"
+    return Path.home() / ".context-analyzer-tool"
 
 
 def get_config_path() -> Path:
@@ -34,7 +34,7 @@ def get_config_path() -> Path:
 class CollectorConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 7821
-    db_path: str = "~/.context-pulse/context_pulse.db"
+    db_path: str = "~/.context-analyzer-tool/context_analyzer_tool.db"
 
 
 class AnomalyConfig(BaseModel):
@@ -88,10 +88,10 @@ class DashboardConfig(BaseModel):
     refresh_rate: float = 2.0
 
 
-_ENV_PREFIX = "CONTEXT_PULSE_"
+_ENV_PREFIX = "CAT_"
 
 
-class ContextPulseConfig(BaseModel):
+class CATConfig(BaseModel):
     """Root configuration model. Maps 1:1 to config.toml sections."""
 
     collector: CollectorConfig = Field(default_factory=CollectorConfig)
@@ -104,11 +104,11 @@ class ContextPulseConfig(BaseModel):
     dashboard: DashboardConfig = Field(default_factory=DashboardConfig)
 
     @model_validator(mode="after")
-    def _apply_env_overrides(self) -> ContextPulseConfig:
+    def _apply_env_overrides(self) -> CATConfig:
         """Override fields from environment variables.
 
-        Pattern: ``CONTEXT_PULSE_{SECTION}_{KEY}`` (uppercase).
-        For example ``CONTEXT_PULSE_COLLECTOR_PORT=7822`` sets
+        Pattern: ``CAT_{SECTION}_{KEY}`` (uppercase).
+        For example ``CAT_COLLECTOR_PORT=7822`` sets
         ``collector.port`` to ``7822``.
         """
         sections: dict[str, BaseModel] = {
@@ -169,17 +169,17 @@ class ContextPulseConfig(BaseModel):
 # ---------------------------------------------------------------------------
 
 _DEFAULT_TOML_TEMPLATE = """\
-# context-pulse configuration
-# Location: ~/.context-pulse/config.toml (or CONTEXT_PULSE_CONFIG_DIR)
+# context-analyzer-tool configuration
+# Location: ~/.context-analyzer-tool/config.toml (or CAT_CONFIG_DIR)
 # All values can be overridden via environment variables:
-#   CONTEXT_PULSE_{SECTION}_{KEY} (uppercase)
+#   CAT_{SECTION}_{KEY} (uppercase)
 
 [collector]
 # Host and port for the collector HTTP server
 host = "127.0.0.1"
 port = 7821
 # Path to SQLite database (~ is expanded)
-db_path = "~/.context-pulse/context_pulse.db"
+db_path = "~/.context-analyzer-tool/context_analyzer_tool.db"
 
 [anomaly]
 # Z-score threshold for anomaly detection
@@ -204,7 +204,7 @@ max_tokens = 150
 cache_results = true
 
 [notifications]
-# Show context-pulse data in Claude Code statusline
+# Show context-analyzer-tool data in Claude Code statusline
 statusline = true
 # Fire OS-level notifications on anomalies
 system_notification = true
@@ -245,11 +245,11 @@ refresh_rate = 2.0
 # ---------------------------------------------------------------------------
 
 
-def load_config(config_path: Path | None = None) -> ContextPulseConfig:
+def load_config(config_path: Path | None = None) -> CATConfig:
     """Load config from a TOML file.
 
     1. If *config_path* is ``None``, use :func:`get_config_path`.
-    2. If the file does not exist, return ``ContextPulseConfig()`` (all defaults).
+    2. If the file does not exist, return ``CATConfig()`` (all defaults).
     3. Parse TOML, validate with Pydantic.
     4. Expand ``~`` in ``db_path``.
 
@@ -261,7 +261,7 @@ def load_config(config_path: Path | None = None) -> ContextPulseConfig:
 
     if not path.exists():
         logger.info("Config file not found at %s — using defaults.", path)
-        return ContextPulseConfig()
+        return CATConfig()
 
     logger.info("Loading config from %s", path)
     try:
@@ -270,7 +270,7 @@ def load_config(config_path: Path | None = None) -> ContextPulseConfig:
     except tomllib.TOMLDecodeError as exc:
         raise ValueError(f"Malformed TOML in {path}: {exc}") from exc
 
-    return ContextPulseConfig.model_validate(data)
+    return CATConfig.model_validate(data)
 
 
 def ensure_config_dir() -> Path:
@@ -285,7 +285,7 @@ def ensure_config_dir() -> Path:
     return config_dir
 
 
-def get_db_path(config: ContextPulseConfig) -> str:
+def get_db_path(config: CATConfig) -> str:
     """Resolve *db_path* from *config*, expanding ``~``.
 
     Returns:

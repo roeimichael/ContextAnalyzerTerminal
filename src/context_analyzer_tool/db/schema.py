@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.db.schema")
+logger = logging.getLogger("context_analyzer_tool.db.schema")
 
 # ---------------------------------------------------------------------------
 # V1 DDL -- every CREATE TABLE / CREATE INDEX from phase-1 architecture §2.1

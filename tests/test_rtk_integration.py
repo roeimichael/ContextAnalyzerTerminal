@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from context_pulse.rtk_integration import (
+from context_analyzer_tool.rtk_integration import (
     enhance_suggestion_with_rtk,
     get_rtk_db_path,
     get_rtk_version,
@@ -17,14 +17,14 @@ from context_pulse.rtk_integration import (
 # ---------------------------------------------------------------------------
 
 
-@patch("context_pulse.rtk_integration.shutil.which", return_value=None)
+@patch("context_analyzer_tool.rtk_integration.shutil.which", return_value=None)
 def test_is_rtk_installed_not_found(mock_which: MagicMock) -> None:
     """When shutil.which returns None, is_rtk_installed should be False."""
     assert is_rtk_installed() is False
     mock_which.assert_called_once_with("rtk")
 
 
-@patch("context_pulse.rtk_integration.shutil.which", return_value="/usr/local/bin/rtk")
+@patch("context_analyzer_tool.rtk_integration.shutil.which", return_value="/usr/local/bin/rtk")
 def test_is_rtk_installed_found(mock_which: MagicMock) -> None:
     """When shutil.which returns a path, is_rtk_installed should be True."""
     assert is_rtk_installed() is True
@@ -36,15 +36,15 @@ def test_is_rtk_installed_found(mock_which: MagicMock) -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("context_pulse.rtk_integration.shutil.which", return_value=None)
+@patch("context_analyzer_tool.rtk_integration.shutil.which", return_value=None)
 def test_get_rtk_version_not_installed(mock_which: MagicMock) -> None:
     """When rtk is not on PATH, get_rtk_version should return None."""
     assert get_rtk_version() is None
 
 
-@patch("context_pulse.rtk_integration.subprocess.run")
+@patch("context_analyzer_tool.rtk_integration.subprocess.run")
 @patch(
-    "context_pulse.rtk_integration.shutil.which",
+    "context_analyzer_tool.rtk_integration.shutil.which",
     return_value="/usr/local/bin/rtk",
 )
 def test_get_rtk_version_success(
@@ -65,7 +65,7 @@ def test_get_rtk_version_success(
 
 
 @patch.dict("os.environ", {}, clear=False)
-@patch("context_pulse.rtk_integration.Path.exists", return_value=False)
+@patch("context_analyzer_tool.rtk_integration.Path.exists", return_value=False)
 def test_get_rtk_db_path_not_found(mock_exists: MagicMock) -> None:
     """When no candidate path exists, get_rtk_db_path returns None."""
     # Also ensure RTK_DB_PATH env var is not set
@@ -80,7 +80,7 @@ def test_get_rtk_db_path_not_found(mock_exists: MagicMock) -> None:
 
 
 @patch(
-    "context_pulse.rtk_integration.is_rtk_installed",
+    "context_analyzer_tool.rtk_integration.is_rtk_installed",
     return_value=False,
 )
 def test_enhance_suggestion_with_rtk_not_installed(
@@ -95,11 +95,11 @@ def test_enhance_suggestion_with_rtk_not_installed(
 
 
 @patch(
-    "context_pulse.rtk_integration.is_rtk_hooks_installed",
+    "context_analyzer_tool.rtk_integration.is_rtk_hooks_installed",
     return_value=False,
 )
 @patch(
-    "context_pulse.rtk_integration.is_rtk_installed",
+    "context_analyzer_tool.rtk_integration.is_rtk_installed",
     return_value=True,
 )
 def test_enhance_suggestion_with_rtk_installed(

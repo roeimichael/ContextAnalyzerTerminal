@@ -6,8 +6,8 @@ import math
 
 import aiosqlite
 
-from context_pulse.db import baselines as db_baselines
-from context_pulse.engine.baseline import BaselineManager, RollingWelford
+from context_analyzer_tool.db import baselines as db_baselines
+from context_analyzer_tool.engine.baseline import BaselineManager, RollingWelford
 
 # ---------------------------------------------------------------------------
 # RollingWelford unit tests

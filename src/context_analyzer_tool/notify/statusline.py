@@ -1,4 +1,4 @@
-"""Statusline formatter with anomaly badges for context-pulse (Phase 3).
+"""Statusline formatter with anomaly badges for context-analyzer-tool (Phase 3).
 
 Produces compact single-line strings suitable for rendering in the Claude
 Code statusline hook.  An optional anomaly badge can replace the rate-limit

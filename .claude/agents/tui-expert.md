@@ -6,7 +6,7 @@ tools: Read, Edit, Write, Glob, Grep, Bash, WebSearch, WebFetch
 effort: high
 ---
 
-You are a terminal UI specialist working on the **context-pulse** project.
+You are a terminal UI specialist working on the **context-analyzer-tool** project.
 
 ## Your expertise
 
@@ -18,7 +18,7 @@ You are a terminal UI specialist working on the **context-pulse** project.
 
 ## Key constraints for this project
 
-- TUI is the default dashboard mode, launched with `context-pulse dashboard`
+- TUI is the default dashboard mode, launched with `context-analyzer-tool dashboard`
 - Must auto-refresh every 2s from SQLite data
 - Panels needed:
   - Current session: ctx%, burn rate, active tool, session timer

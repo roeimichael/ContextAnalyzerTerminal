@@ -11,10 +11,10 @@ import logging
 
 import aiosqlite
 
-from context_pulse.db import messages as db_messages
-from context_pulse.engine.context_breakdown import FRESH_SESSION_COST
+from context_analyzer_tool.db import messages as db_messages
+from context_analyzer_tool.engine.context_breakdown import FRESH_SESSION_COST
 
-logger = logging.getLogger("context_pulse.notify.context_warnings")
+logger = logging.getLogger("context_analyzer_tool.notify.context_warnings")
 
 _FRESH_COST_K = FRESH_SESSION_COST // 1000  # e.g. 13
 
@@ -23,7 +23,7 @@ _THRESHOLDS: list[tuple[float, str, str]] = [
     (
         60.0,
         "CONTEXT_WARNING_60",
-        "[context-pulse] Context usage at {pct:.0f}%. "
+        "[CAT] Context usage at {pct:.0f}%. "
         "Each message now costs ~{cost_per_turn}K tokens "
         "(vs ~{fresh_k}K for a fresh session). "
         "Run /compact to reclaim space, or start a fresh session. "
@@ -32,7 +32,7 @@ _THRESHOLDS: list[tuple[float, str, str]] = [
     (
         70.0,
         "CONTEXT_WARNING_70",
-        "[context-pulse] Context at {pct:.0f}% \u2014 auto-compact approaching (~83%). "
+        "[CAT] Context at {pct:.0f}% \u2014 auto-compact approaching (~83%). "
         "Run /compact now to compact proactively (you control what's preserved). "
         "Save important context to memory first. "
         "A fresh session costs ~{fresh_k}K/turn vs your current ~{cost_per_turn}K/turn.",
@@ -40,7 +40,7 @@ _THRESHOLDS: list[tuple[float, str, str]] = [
     (
         90.0,
         "CONTEXT_WARNING_90",
-        "[context-pulse] CRITICAL: Context at {pct:.0f}%. "
+        "[CAT] CRITICAL: Context at {pct:.0f}%. "
         "Run /clear to start fresh within this session, "
         "or save findings to memory and open a new session. "
         "Current cost: ~{cost_per_turn}K/turn. Fresh session: ~{fresh_k}K/turn.",

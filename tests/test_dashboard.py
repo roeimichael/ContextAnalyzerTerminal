@@ -8,7 +8,7 @@ from typing import Any
 from rich.console import Console
 from rich.panel import Panel
 
-from context_pulse.dashboard.tui import (
+from context_analyzer_tool.dashboard.tui import (
     DashboardClient,
     build_anomaly_panel,
     build_header,

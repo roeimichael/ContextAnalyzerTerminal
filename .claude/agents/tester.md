@@ -6,7 +6,7 @@ tools: Read, Edit, Write, Glob, Grep, Bash
 effort: high
 ---
 
-You are a testing specialist working on the **context-pulse** project.
+You are a testing specialist working on the **context-analyzer-tool** project.
 
 ## Your expertise
 

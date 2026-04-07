@@ -1,4 +1,4 @@
-"""All HTTP route handlers for the context-pulse collector."""
+"""All HTTP route handlers for the context-analyzer-tool collector."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from typing import Any
 import aiosqlite
 from fastapi import APIRouter, Depends, Request
 
-from context_pulse.collector import delta_engine
-from context_pulse.collector.models import (
+from context_analyzer_tool.collector import delta_engine
+from context_analyzer_tool.collector.models import (
     AnomaliesListResponse,
     AnomalyResponse,
     BaselineSnapshot,
@@ -26,10 +26,10 @@ from context_pulse.collector.models import (
     StatusResponse,
     TaskResponse,
 )
-from context_pulse.db import anomalies as db_anomalies
-from context_pulse.db import baselines as db_baselines
-from context_pulse.db import events as db_events
-from context_pulse.db import tasks as db_tasks
+from context_analyzer_tool.db import anomalies as db_anomalies
+from context_analyzer_tool.db import baselines as db_baselines
+from context_analyzer_tool.db import events as db_events
+from context_analyzer_tool.db import tasks as db_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ async def receive_statusline_snapshot(
 
         # Check context thresholds and queue warnings
         try:
-            from context_pulse.notify.context_warnings import check_context_thresholds
+            from context_analyzer_tool.notify.context_warnings import check_context_thresholds
 
             await check_context_thresholds(
                 db=db,
@@ -304,7 +304,7 @@ async def get_status(
 ) -> StatusResponse:
     """Return active sessions, last 20 events, and last 20 tasks.
 
-    Used by ``context-pulse status`` CLI command.
+    Used by ``context-analyzer-tool status`` CLI command.
     """
     # Active sessions: those with events in the last 5 minutes.
     active_window_ms = 5 * 60 * 1000
@@ -411,7 +411,7 @@ async def get_status(
         # Burn rate projection
         burn_rate: dict[str, Any] | None = None
         try:
-            from context_pulse.engine.burn_rate import compute_burn_rate
+            from context_analyzer_tool.engine.burn_rate import compute_burn_rate
 
             snap_rows = await db_events.get_recent_snapshots(
                 db, session_id=sid, limit=20,
@@ -638,7 +638,7 @@ async def get_anomalies(
 @api_router.get("/rtk-status")
 async def get_rtk_status() -> dict[str, Any]:
     """Return RTK integration status and savings."""
-    from context_pulse.rtk_integration import (
+    from context_analyzer_tool.rtk_integration import (
         get_rtk_savings_summary,
         get_rtk_version,
         is_rtk_hooks_installed,
@@ -736,7 +736,7 @@ async def get_pending_messages(
     to inject additionalContext.
     """
     try:
-        from context_pulse.db import messages as db_messages
+        from context_analyzer_tool.db import messages as db_messages
 
         msgs = await db_messages.consume_messages(db, session_id)
         return {"messages": msgs}
@@ -754,7 +754,7 @@ async def get_context_breakdown(
 
     Shows fixed costs vs. conversation history overhead.
     """
-    from context_pulse.engine.context_breakdown import compute_breakdown
+    from context_analyzer_tool.engine.context_breakdown import compute_breakdown
 
     snap = await db_events.get_latest_snapshot(db, session_id)
     if snap is None:
@@ -777,7 +777,7 @@ async def get_burn_rate(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> dict[str, Any]:
     """Return burn rate projection for a session."""
-    from context_pulse.engine.burn_rate import compute_burn_rate
+    from context_analyzer_tool.engine.burn_rate import compute_burn_rate
 
     snap_rows = await db_events.get_recent_snapshots(
         db, session_id=session_id, limit=lookback,
@@ -800,7 +800,7 @@ async def get_compactions(
     db: aiosqlite.Connection = Depends(get_db),
 ) -> dict[str, Any]:
     """Return recent compaction events."""
-    from context_pulse.db import compaction as db_compaction
+    from context_analyzer_tool.db import compaction as db_compaction
 
     rows = await db_compaction.get_recent_compactions(
         db, session_id=session_id, limit=limit,

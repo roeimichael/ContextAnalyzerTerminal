@@ -4,7 +4,7 @@
 # ///
 
 """
-context-pulse hook: PostToolUse
+context-analyzer-tool hook: PostToolUse
 Reads hook payload from stdin, POSTs to collector, exits 0.
 """
 
@@ -91,7 +91,7 @@ def get_session_alert(session_id: str) -> str:
                         pass
 
                 parts = [
-                    f"[context-pulse] \u26a0 Last {task_type} command cost "
+                    f"[CAT] \u26a0 Last {task_type} command cost "
                     f"{delta:,} tokens ({z:.1f}\u03c3 above baseline of ~{mean:,.0f})."
                 ]
                 if cause:
@@ -125,7 +125,7 @@ def main() -> None:
             tool = envelope.get("tool_name", "Tool")
             tokens_k = response_tokens / 1000
             context_parts.append(
-                f"[context-pulse] That {tool} output consumed ~{tokens_k:.0f}K tokens. "
+                f"[CAT] That {tool} output consumed ~{tokens_k:.0f}K tokens. "
                 "Consider piping through head/tail or using rtk."
             )
 

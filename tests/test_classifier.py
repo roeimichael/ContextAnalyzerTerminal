@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import aiosqlite
 
-from context_pulse.collector.models import ClassifierResponse
-from context_pulse.config import ClassifierConfig
-from context_pulse.engine.classifier import (
+from context_analyzer_tool.collector.models import ClassifierResponse
+from context_analyzer_tool.config import ClassifierConfig
+from context_analyzer_tool.engine.classifier import (
     _compute_cache_key,
     _parse_classifier_output,
     classify_anomaly,

@@ -7,9 +7,9 @@ import time
 
 import aiosqlite
 
-from context_pulse.db import events as db_events
-from context_pulse.db import tasks as db_tasks
-from context_pulse.db.schema import get_schema_version, open_db
+from context_analyzer_tool.db import events as db_events
+from context_analyzer_tool.db import tasks as db_tasks
+from context_analyzer_tool.db.schema import get_schema_version, open_db
 
 # ---------------------------------------------------------------------------
 # Schema / migration tests

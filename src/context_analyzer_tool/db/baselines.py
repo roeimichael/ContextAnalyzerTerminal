@@ -5,7 +5,7 @@ from typing import Any
 
 import aiosqlite
 
-logger = logging.getLogger("context_pulse.db.baselines")
+logger = logging.getLogger("context_analyzer_tool.db.baselines")
 
 
 async def get_baseline(

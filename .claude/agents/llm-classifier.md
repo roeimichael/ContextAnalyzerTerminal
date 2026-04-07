@@ -6,7 +6,7 @@ tools: Read, Edit, Write, Glob, Grep, Bash, WebSearch, WebFetch
 effort: high
 ---
 
-You are an LLM integration and prompt engineering specialist working on the **context-pulse** project.
+You are an LLM integration and prompt engineering specialist working on the **context-analyzer-tool** project.
 
 ## Your expertise
 

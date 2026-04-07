@@ -11,21 +11,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from context_pulse.config import NotificationsConfig
-from context_pulse.notify.dispatcher import (
+from context_analyzer_tool.config import NotificationsConfig
+from context_analyzer_tool.notify.dispatcher import (
     build_additional_context,
     dispatch_anomaly_notifications,
 )
-from context_pulse.notify.session_alert import format_session_alert
-from context_pulse.notify.statusline import (
+from context_analyzer_tool.notify.session_alert import format_session_alert
+from context_analyzer_tool.notify.statusline import (
     format_anomaly_badge,
     format_statusline_with_anomaly,
 )
-from context_pulse.notify.system import (
+from context_analyzer_tool.notify.system import (
     format_anomaly_notification,
     send_system_notification,
 )
-from context_pulse.notify.webhook import (
+from context_analyzer_tool.notify.webhook import (
     format_generic_payload,
     format_slack_payload,
     send_webhook,
@@ -37,7 +37,7 @@ from context_pulse.notify.webhook import (
 
 
 class TestSystemNotifications:
-    """Tests for context_pulse.notify.system."""
+    """Tests for context_analyzer_tool.notify.system."""
 
     def test_format_anomaly_notification(self) -> None:
         """Title contains severity; body contains task type, tokens, and ratio."""
@@ -50,8 +50,8 @@ class TestSystemNotifications:
             suggestion="Use --max-depth to limit output",
         )
 
-        # Title should contain severity label and the "context-pulse" prefix
-        assert "context-pulse" in title
+        # Title should contain severity label and the "context-analyzer-tool" prefix
+        assert "context-analyzer-tool" in title
         assert "High" in title  # z >= 4.0 -> High
 
         # Message body checks
@@ -109,7 +109,7 @@ class TestSystemNotifications:
 
 
 class TestWebhook:
-    """Tests for context_pulse.notify.webhook."""
+    """Tests for context_analyzer_tool.notify.webhook."""
 
     def test_format_slack_payload(self) -> None:
         """Slack Block Kit payload has correct structure and field values."""
@@ -187,7 +187,7 @@ class TestWebhook:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("context_pulse.notify.webhook.httpx.AsyncClient", return_value=mock_client):
+        with patch("context_analyzer_tool.notify.webhook.httpx.AsyncClient", return_value=mock_client):
             result = await send_webhook("https://example.com/hook", {"test": True})
 
         assert result is True
@@ -204,7 +204,7 @@ class TestWebhook:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("context_pulse.notify.webhook.httpx.AsyncClient", return_value=mock_client):
+        with patch("context_analyzer_tool.notify.webhook.httpx.AsyncClient", return_value=mock_client):
             result = await send_webhook("https://example.com/hook", {"test": True})
 
         assert result is False
@@ -216,7 +216,7 @@ class TestWebhook:
 
 
 class TestSessionAlert:
-    """Tests for context_pulse.notify.session_alert."""
+    """Tests for context_analyzer_tool.notify.session_alert."""
 
     def test_format_session_alert_full(self) -> None:
         """Alert with cause and suggestion includes all three lines."""
@@ -233,7 +233,7 @@ class TestSessionAlert:
         assert len(lines) == 3
 
         # Headline
-        assert "[context-pulse]" in lines[0]
+        assert "[CAT]" in lines[0]
         assert "8,400" in lines[0]
         assert "4.2\u03c3" in lines[0]
         assert "2,000" in lines[0]
@@ -257,7 +257,7 @@ class TestSessionAlert:
         assert "Cause:" not in alert
         assert "Consider:" not in alert
         assert "\n" not in alert
-        assert "[context-pulse]" in alert
+        assert "[CAT]" in alert
         assert "5,000" in alert
 
 
@@ -267,7 +267,7 @@ class TestSessionAlert:
 
 
 class TestStatusline:
-    """Tests for context_pulse.notify.statusline."""
+    """Tests for context_analyzer_tool.notify.statusline."""
 
     def test_format_anomaly_badge(self) -> None:
         """Badge follows the pattern: warning sign, task, compact tokens, z-score."""
@@ -325,7 +325,7 @@ class TestStatusline:
 
 
 class TestDispatcher:
-    """Tests for context_pulse.notify.dispatcher."""
+    """Tests for context_analyzer_tool.notify.dispatcher."""
 
     @pytest.mark.asyncio
     async def test_dispatch_all_disabled(self) -> None:
@@ -360,7 +360,7 @@ class TestDispatcher:
         )
 
         with patch(
-            "context_pulse.notify.system.notify_anomaly",
+            "context_analyzer_tool.notify.system.notify_anomaly",
             new_callable=AsyncMock,
             return_value=True,
         ) as mock_notify:
@@ -396,7 +396,7 @@ class TestDispatcher:
         )
 
         with patch(
-            "context_pulse.notify.webhook.notify_webhook",
+            "context_analyzer_tool.notify.webhook.notify_webhook",
             new_callable=AsyncMock,
             return_value=True,
         ) as mock_wh:
@@ -451,6 +451,6 @@ class TestDispatcher:
             suggestion="Use --max-depth",
         )
         assert result is not None
-        assert "[context-pulse]" in result
+        assert "[CAT]" in result
         assert "8,400" in result
         assert "Cause: Large output" in result

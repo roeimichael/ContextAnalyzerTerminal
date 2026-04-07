@@ -1,4 +1,4 @@
-"""Shared fixtures for context-pulse Phase 1 tests."""
+"""Shared fixtures for context-analyzer-tool Phase 1 tests."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from context_pulse.collector.models import HookEventRequest, StatuslineSnapshotRequest
-from context_pulse.collector.routes import api_router, hook_router
-from context_pulse.config import ContextPulseConfig
-from context_pulse.db.schema import open_db, run_migrations
+from context_analyzer_tool.collector.models import HookEventRequest, StatuslineSnapshotRequest
+from context_analyzer_tool.collector.routes import api_router, hook_router
+from context_analyzer_tool.config import CATConfig
+from context_analyzer_tool.db.schema import open_db, run_migrations
 
 # ---------------------------------------------------------------------------
 # Database fixture
@@ -120,11 +120,11 @@ async def app_client(
     Sets app.state directly because ASGITransport does not trigger
     FastAPI lifespan events.
     """
-    app = FastAPI(title="context-pulse-test")
+    app = FastAPI(title="context-analyzer-tool-test")
     app.include_router(hook_router, prefix="/hook")
     app.include_router(api_router, prefix="/api")
     app.state.db = db_connection
-    app.state.config = ContextPulseConfig()
+    app.state.config = CATConfig()
     app.state.sessions = {}
     app.state.start_time = time.time()
     transport = ASGITransport(app=app)  # type: ignore[arg-type]

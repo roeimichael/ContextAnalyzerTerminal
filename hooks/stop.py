@@ -4,7 +4,7 @@
 # ///
 
 """
-context-pulse hook: Stop
+context-analyzer-tool hook: Stop
 Reads hook payload from stdin, POSTs to collector, exits 0.
 """
 

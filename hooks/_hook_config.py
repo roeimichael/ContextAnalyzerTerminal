@@ -1,4 +1,4 @@
-"""Shared config reader for context-pulse hook scripts.
+"""Shared config reader for context-analyzer-tool hook scripts.
 
 Uses only stdlib (tomllib, pathlib, os) — no external dependencies.
 Hook scripts import from this module to get the collector URL, timeout,
@@ -18,7 +18,7 @@ def _load_config() -> dict:
     if _CONFIG_CACHE is not None:
         return _CONFIG_CACHE
     config_dir = os.environ.get(
-        "CONTEXT_PULSE_CONFIG_DIR", str(Path.home() / ".context-pulse")
+        "CAT_CONFIG_DIR", str(Path.home() / ".context-analyzer-tool")
     )
     config_path = Path(config_dir) / "config.toml"
     if config_path.exists():

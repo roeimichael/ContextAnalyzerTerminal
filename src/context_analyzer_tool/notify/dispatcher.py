@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from context_pulse.config import NotificationsConfig
+from context_analyzer_tool.config import NotificationsConfig
 
-logger = logging.getLogger("context_pulse.notify.dispatcher")
+logger = logging.getLogger("context_analyzer_tool.notify.dispatcher")
 
 
 async def dispatch_anomaly_notifications(
@@ -30,7 +30,7 @@ async def dispatch_anomaly_notifications(
     # System notification (OS-level)
     if config.system_notification:
         try:
-            from context_pulse.notify.system import notify_anomaly
+            from context_analyzer_tool.notify.system import notify_anomaly
 
             ok = await notify_anomaly(
                 task_type=task_type,
@@ -48,7 +48,7 @@ async def dispatch_anomaly_notifications(
     # Webhook (Slack/Discord/custom)
     if config.webhook_url:
         try:
-            from context_pulse.notify.webhook import notify_webhook
+            from context_analyzer_tool.notify.webhook import notify_webhook
 
             ok = await notify_webhook(
                 url=config.webhook_url,
@@ -85,7 +85,7 @@ def build_additional_context(
         return None
 
     try:
-        from context_pulse.notify.session_alert import format_session_alert
+        from context_analyzer_tool.notify.session_alert import format_session_alert
 
         return format_session_alert(
             task_type=task_type,

@@ -1,4 +1,4 @@
-"""Webhook notification module for context-pulse (Phase 3).
+"""Webhook notification module for context-analyzer-tool (Phase 3).
 
 Sends anomaly alerts to external services (Slack, Discord, custom
 webhooks) via HTTP POST.  All public functions are exception-safe and
@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger("context_pulse.notify.webhook")
+logger = logging.getLogger("context_analyzer_tool.notify.webhook")
 
 # ---------------------------------------------------------------------------
 # Payload formatters
@@ -62,7 +62,7 @@ def format_slack_payload(
 
     # Fallback text (shown in notifications / non-Block Kit clients)
     fallback_text = (
-        f"\u26a0 context-pulse: {task_type} used {tokens_fmt} tokens "
+        f"\u26a0 context-analyzer-tool: {task_type} used {tokens_fmt} tokens "
         f"({z_fmt}\u03c3)"
     )
 

@@ -4,7 +4,7 @@
 # ///
 
 """
-context-pulse statusline script.
+context-analyzer-tool statusline script.
 1. Reads statusline JSON from stdin (provided by Claude Code).
 2. POSTs token snapshot to collector (fire-and-forget, 2s timeout).
 3. Prints a formatted statusline string to stdout.
@@ -20,7 +20,7 @@ from _hook_config import get_collector_url, get_timeout
 COLLECTOR_URL = get_collector_url("/hook/statusline")
 TIMEOUT_SECONDS = get_timeout()
 
-# Must match context_pulse.engine.context_breakdown.FRESH_SESSION_COST
+# Must match context_analyzer_tool.engine.context_breakdown.FRESH_SESSION_COST
 _FRESH_SESSION_COST = 13_700
 
 
@@ -140,7 +140,7 @@ def main() -> None:
         print(format_statusline(data))
     except Exception:
         # On any error, output a safe default
-        print("context-pulse | --")
+        print("context-analyzer-tool | --")
 
     sys.exit(0)
 

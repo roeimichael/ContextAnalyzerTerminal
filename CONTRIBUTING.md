@@ -27,7 +27,7 @@ uv run ruff check src tests
 ### Project Structure
 
 ```
-src/context_pulse/
+src/context_analyzer_tool/
   cli.py              # Typer CLI entry point
   config.py           # TOML + env var configuration
   collector/           # FastAPI HTTP server + delta engine
@@ -60,13 +60,13 @@ uv run pyright                   # Type checker (strict mode)
 
 ```bash
 # Start the collector server
-uv run context-pulse serve
+uv run context-analyzer-tool serve
 
 # In another terminal, view the dashboard
-uv run context-pulse dashboard
+uv run context-analyzer-tool dashboard
 
 # Check health
-uv run context-pulse health
+uv run context-analyzer-tool health
 ```
 
 ## Submitting Changes
