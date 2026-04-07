@@ -187,7 +187,8 @@ class TestWebhook:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("context_analyzer_tool.notify.webhook.httpx.AsyncClient", return_value=mock_client):
+        target = "context_analyzer_tool.notify.webhook.httpx.AsyncClient"
+        with patch(target, return_value=mock_client):
             result = await send_webhook("https://example.com/hook", {"test": True})
 
         assert result is True
@@ -204,7 +205,8 @@ class TestWebhook:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("context_analyzer_tool.notify.webhook.httpx.AsyncClient", return_value=mock_client):
+        target = "context_analyzer_tool.notify.webhook.httpx.AsyncClient"
+        with patch(target, return_value=mock_client):
             result = await send_webhook("https://example.com/hook", {"test": True})
 
         assert result is False
