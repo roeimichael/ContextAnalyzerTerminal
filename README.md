@@ -17,11 +17,11 @@
 CAT hooks into your Claude Code sessions and tracks token cost **per tool call** -- not just per session. It builds rolling baselines, flags anomalies, and uses an LLM to explain *why* something was expensive.
 
 <p align="center">
-  <img src="docs/demo-dashboard.svg" alt="CAT Dashboard" width="100%">
+  <img src="docs/demo.gif" alt="CAT Demo" width="100%">
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="CAT Demo" width="100%">
+  <img src="docs/demo-dashboard.svg" alt="CAT Dashboard" width="100%">
 </p>
 
 ## Install
