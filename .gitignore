@@ -44,5 +44,5 @@ coverage.xml
 .env.*
 !.env.example
 
-# Claude Code local settings (user-specific)
-.claude/settings.local.json
+# Claude Code (dev-specific agents and settings)
+.claude/
