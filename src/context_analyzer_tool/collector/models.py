@@ -245,6 +245,9 @@ class HealthResponse(BaseModel):
     db_path: str
     event_count: int
     snapshot_count: int
+    db_size_bytes: int = 0
+    table_counts: dict[str, int] = {}
+    schema_version: int = 0
 
 
 class BaselineSnapshot(BaseModel):

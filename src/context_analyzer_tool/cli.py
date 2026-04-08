@@ -430,8 +430,10 @@ def health(
     event_count = data.get("event_count", 0)
     snapshot_count = data.get("snapshot_count", 0)
     db_path = data.get("db_path", "unknown")
+    db_size_bytes = data.get("db_size_bytes", 0)
+    table_counts: dict[str, int] = data.get("table_counts", {})
+    schema_version = data.get("schema_version", 0)
 
-    # Format uptime nicely
     hours, remainder = divmod(int(uptime), 3600)
     minutes, seconds = divmod(remainder, 60)
     if hours > 0:
@@ -440,6 +442,13 @@ def health(
         uptime_str = f"{minutes}m {seconds}s"
     else:
         uptime_str = f"{seconds}s"
+
+    if db_size_bytes >= 1024 * 1024:
+        db_size_str = f"{db_size_bytes / (1024 * 1024):.1f} MB"
+    elif db_size_bytes >= 1024:
+        db_size_str = f"{db_size_bytes / 1024:.1f} KB"
+    else:
+        db_size_str = f"{db_size_bytes} B"
 
     health_table = Table(show_header=False, expand=True)
     health_table.add_column("Key", style="bold")
@@ -451,6 +460,11 @@ def health(
     health_table.add_row("Events", f"{event_count:,}")
     health_table.add_row("Snapshots", f"{snapshot_count:,}")
     health_table.add_row("Database", db_path)
+    health_table.add_row("DB Size", db_size_str)
+    health_table.add_row("Schema", f"v{schema_version}")
+    if table_counts:
+        counts_str = "  ".join(f"{t}: {n:,}" for t, n in sorted(table_counts.items()))
+        health_table.add_row("Tables", counts_str)
 
     console.print(Panel(health_table, title="Collector Health", border_style="green"))
 

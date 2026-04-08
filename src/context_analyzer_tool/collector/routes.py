@@ -30,6 +30,8 @@ from context_analyzer_tool.db import anomalies as db_anomalies
 from context_analyzer_tool.db import baselines as db_baselines
 from context_analyzer_tool.db import events as db_events
 from context_analyzer_tool.db import tasks as db_tasks
+from context_analyzer_tool.db.maintenance import get_table_counts
+from context_analyzer_tool.db.schema import get_schema_version
 
 logger = logging.getLogger(__name__)
 
@@ -514,12 +516,22 @@ async def get_health(
     event_count = await db_events.get_event_count(db)
     snapshot_count = await db_events.get_snapshot_count(db)
 
+    try:
+        db_size = os.path.getsize(db_path)
+    except OSError:
+        db_size = 0
+    table_counts = await get_table_counts(db)
+    schema_version = await get_schema_version(db)
+
     return HealthResponse(
         status="ok",
         uptime_seconds=uptime_seconds,
         db_path=db_path,
         event_count=event_count,
         snapshot_count=snapshot_count,
+        db_size_bytes=db_size,
+        table_counts=table_counts,
+        schema_version=schema_version,
     )
 
 
