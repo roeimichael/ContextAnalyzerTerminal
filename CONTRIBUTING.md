@@ -2,6 +2,30 @@
 
 Thanks for your interest in contributing! CAT is an open-source project and we welcome contributions of all kinds.
 
+## 🚀 Start Here
+
+Welcome! If you're new to CAT, this section will help you quickly understand the project and how to start contributing.
+
+### 🧭 What this project does
+
+CAT (Context Analyzer Tool) is a system that processes incoming data, analyzes it for anomalies, and triggers notifications based on detected patterns.
+
+### 🧠 How the system works (high-level)
+
+The system follows a pipeline-based flow:
+
+Claude Code Hooks → FastAPI Collector → Delta Engine → Anomaly Detection → Notifications
+
+This modular architecture allows each component to focus on a specific responsibility.
+
+### 📖 Recommended first steps
+
+If you're new, follow this order:
+
+1. Read the architecture overview below  
+2. Explore the recommended files (`config.py`, `models.py`, etc.) mentioned below  
+3. Pick a "good first issue" to start contributing  
+
 ## New here? Start with a Good First Issue
 
 We maintain a curated list of beginner-friendly issues — each one includes clear context, the files to look at, and a suggested approach:
