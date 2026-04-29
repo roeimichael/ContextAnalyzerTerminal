@@ -9,6 +9,23 @@ We maintain a curated list of beginner-friendly issues — each one includes cle
 **[Browse Good First Issues](https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue)**
 
 These range from one-line bug fixes to small feature additions, and are a great way to get familiar with the codebase and dev workflow before tackling bigger tasks.
+## Start Here
+
+### Architecture Overview
+
+Claude Code Hooks → FastAPI Collector → Delta Engine → Anomaly Detection → Notifications
+
+### Recommended Reading Order
+
+config.py → models.py → delta_engine.py → anomaly.py
+
+### Architecture Docs
+- docs/phase1-architecture.md  
+- docs/phase2-architecture.md  
+
+### Good First Issues
+
+https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue
 
 ## Understanding the Architecture
 
