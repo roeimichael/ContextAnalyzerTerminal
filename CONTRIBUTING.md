@@ -9,6 +9,42 @@ We maintain a curated list of beginner-friendly issues — each one includes cle
 **[Browse Good First Issues](https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue)**
 
 These range from one-line bug fixes to small feature additions, and are a great way to get familiar with the codebase and dev workflow before tackling bigger tasks.
+## Start Here
+
+If you're new to this project, follow this guide to get started quickly.
+
+### Architecture Overview
+
+The system processes data through the following pipeline:
+
+Claude Code Hooks → FastAPI Collector → Delta Engine → Anomaly Detection → Notifications
+
+### What Each Part Does
+
+- **Hooks**: Capture events from Claude Code  
+- **Collector**: Receives and stores incoming data  
+- **Delta Engine**: Compares changes over time  
+- **Anomaly Detection**: Detects unusual patterns  
+- **Notifications**: Sends alerts  
+
+### Recommended Reading Order
+
+To understand the codebase, read in this order:
+
+1. `config.py` — configuration setup  
+2. `models.py` — data structures  
+3. `delta_engine.py` — core logic  
+4. `anomaly.py` — anomaly detection  
+
+### Architecture Docs
+
+- `docs/phase1-architecture.md`  
+- `docs/phase2-architecture.md`  
+
+### Good First Issues
+
+Start contributing here:  
+https://github.com/roeimichael/ContextAnalyzerTerminal/labels/good%20first%20issue
 
 ## Understanding the Architecture
 
